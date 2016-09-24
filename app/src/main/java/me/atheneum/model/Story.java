@@ -9,23 +9,17 @@ import java.util.UUID;
 public class Story {
 
     private UUID storyId;
-    private Date date;
+    private long date;
     private String title;
     private String description;
     private String author;
     private int viewCount;
 
-    public Story(String title, String description, String author, UUID storyId, Date date){
+    public Story(String title, String description, String author){
         this.title  = title;
         this.description = description;
         this.author = author;
         this.viewCount = 0;
-        this.storyId = (storyId == null)? UUID.randomUUID() : storyId;
-        this.date = (date == null)? new Date(): date;
-    }
-
-    public Story(){
-        this("","","", null, null);
     }
 
     public UUID getStoryId(){
@@ -36,11 +30,11 @@ public class Story {
         this.storyId = storyId;
     }
 
-    public Date getDate(){
+    public long getDate(){
         return date;
     }
 
-    public void setDate(Date date){
+    public void setDate(long date){
         this.date = date;
     }
 

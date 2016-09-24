@@ -24,6 +24,10 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryViewHolder> {
         this.stories = stories;
     }
 
+    public void setStories(List<Story> stories) {
+        this.stories = stories;
+    }
+
     @Override
     public StoryViewHolder onCreateViewHolder(ViewGroup parent, int viewType){
         Context context = parent.getContext();

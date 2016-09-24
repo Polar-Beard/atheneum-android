@@ -1,5 +1,6 @@
 package me.atheneum.activity;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -14,27 +15,89 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import me.atheneum.R;
 import me.atheneum.adapters.StoryAdapter;
+import me.atheneum.model.Story;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        final RequestQueue queue = Volley.newRequestQueue(this);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Dialog dialog = new Dialog(view.getContext());
+                dialog.setContentView(R.layout.create_story_dialog);
+                final EditText titleInput = (EditText) dialog.findViewById(R.id.title_input);
+                final EditText descriptionInput = (EditText) dialog.findViewById(R.id.description_input);
+                final EditText authorInput = (EditText) dialog.findViewById(R.id.author_input);
+                Button storySubmitButton = (Button) dialog.findViewById(R.id.story_submit_button);
+
+                storySubmitButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        String title = titleInput.getEditableText().toString();
+                        String description = descriptionInput.getEditableText().toString();
+                        String author = authorInput.getEditableText().toString();
+                        Story story = new Story(title,description, author);
+                        Gson gson = new Gson();
+                        String postBody = gson.toJson(story);
+                        JSONObject jsonObject;
+                        try {
+                            jsonObject = new JSONObject(postBody);
+                        } catch (Exception e){
+                            return;
+                        }
+                        String url = "http://104.236.163.131:9000/api/story";
+
+                        // Request a string response from the provided URL.
+                        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(url,jsonObject,
+                                new Response.Listener<JSONObject>() {
+                                    @Override
+                                    public void onResponse(JSONObject response) {
+                                        // Display the first 500 characters of the response string.
+                                        System.out.println("It worked!");
+                                    }
+                                }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                System.out.println("Posting didn't work!");
+                            }
+                        });
+                        // Add the request to the RequestQueue.
+                        queue.add(jsonObjectRequest);
+                    }
+                });
+                dialog.show();
             }
         });
 
@@ -47,8 +110,34 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        RecyclerView recyclerView =(RecyclerView)findViewById(R.id.recycler_view_story);
-        StoryAdapter storyAdapter = new StoryAdapter(stories);
+        //Networking stuff
+        // Instantiate the RequestQueue.
+
+        String url = "http://104.236.163.131:9000/api/story/n/100";
+        final StoryAdapter storyAdapter = new StoryAdapter(new ArrayList<Story>());
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        System.out.println("It worked!");
+                        Gson gson = new Gson();
+                        List<Story> stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
+                        storyAdapter.setStories(stories);
+                        storyAdapter.notifyDataSetChanged();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println("Getting didn't work!");
+            }
+        });
+// Add the request to the RequestQueue.
+        queue.add(stringRequest);
+
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view_story);
         recyclerView.setAdapter(storyAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 

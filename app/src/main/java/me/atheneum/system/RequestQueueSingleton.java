@@ -16,7 +16,7 @@ public class RequestQueueSingleton {
 
     private RequestQueueSingleton(Context context){
         this.context = context;
-        RequestQueue = getRequestQueue();
+        this.requestQueue = getRequestQueue();
     }
 
     public static synchronized RequestQueueSingleton getInstance(Context context){
