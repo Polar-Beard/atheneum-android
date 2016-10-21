@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity
                         } catch (Exception e){
                             return;
                         }
-                        String url = "http://104.236.163.131:9000/api/story";
+                        String url = "http://104.236.163.131:9000/api/story/publish";
 
                         // Request a string response from the provided URL.
                         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(url,jsonObject,
@@ -121,7 +122,6 @@ public class MainActivity extends AppCompatActivity
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
                         System.out.println("It worked!");
                         Gson gson = new Gson();
                         List<Story> stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
@@ -129,12 +129,11 @@ public class MainActivity extends AppCompatActivity
                         storyAdapter.notifyDataSetChanged();
                     }
                 }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println("Getting didn't work!");
-            }
-        });
-// Add the request to the RequestQueue.
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println("Getting didn't work!");
+                    }
+                });
         queue.add(stringRequest);
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view_story);
