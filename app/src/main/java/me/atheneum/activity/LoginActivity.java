@@ -2,6 +2,7 @@ package me.atheneum.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.SyncStateContract;
 import android.support.v7.app.AppCompatActivity;
@@ -32,6 +33,7 @@ import me.atheneum.requests.AuthStringRequest;
 public class LoginActivity extends AppCompatActivity {
 
     private static final String URL_LOGIN = "http://104.236.163.131:9000/api/user/login";
+    private static final String PREFS_NAME = "CredentialPrefsFile";
 
     @Override
     public void onCreate(Bundle savedInstanceState){
@@ -58,6 +60,7 @@ public class LoginActivity extends AppCompatActivity {
                         new Response.Listener<String>(){
                             @Override
                             public void onResponse(String response){
+                                saveCredentials(emailAddress,password);
                                 Context context = getApplicationContext();
                                 CharSequence text = "Successfully logged in!";
                                 int duration = Toast.LENGTH_SHORT;
@@ -92,5 +95,14 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+    }
+
+    private void saveCredentials(String emailAddress, String password){
+        SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = credentials.edit();
+        editor.putString("emailAddress", emailAddress);
+        editor.putString("password", password);
+        editor.commit();
     }
 }

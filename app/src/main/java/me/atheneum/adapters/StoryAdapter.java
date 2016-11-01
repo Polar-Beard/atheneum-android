@@ -41,10 +41,8 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryViewHolder> {
         Story story = stories.get(position);
         View view = holder.itemView;
         TextView title = (TextView) view.findViewById(R.id.list_item_story_title);
-        TextView author = (TextView) view.findViewById(R.id.list_item_story_author);
         TextView description = (TextView) view.findViewById(R.id.list_item_story_description);
         title.setText(story.getTitle());
-        author.setText(story.getAuthor());
         description.setText(story.getDescription());
     }
 

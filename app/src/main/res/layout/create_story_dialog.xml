@@ -16,13 +16,6 @@
         android:id="@+id/description_input"
         android:hint="Description"/>
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/author_input"
-        android:layout_gravity="center_horizontal"
-        android:hint="Author"/>
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -1,11 +1,14 @@
 package me.atheneum.activity;
 
 import android.app.Dialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -18,29 +21,36 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.android.volley.NetworkResponse;
+import com.android.volley.ParseError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import me.atheneum.R;
 import me.atheneum.adapters.StoryAdapter;
 import me.atheneum.model.Story;
+import me.atheneum.requests.AuthJsonObjectRequest;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-
+    private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
+    private static final String PREFS_NAME = "CredentialPrefsFile";
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -60,7 +70,6 @@ public class MainActivity extends AppCompatActivity
                 dialog.setContentView(R.layout.create_story_dialog);
                 final EditText titleInput = (EditText) dialog.findViewById(R.id.title_input);
                 final EditText descriptionInput = (EditText) dialog.findViewById(R.id.description_input);
-                final EditText authorInput = (EditText) dialog.findViewById(R.id.author_input);
                 Button storySubmitButton = (Button) dialog.findViewById(R.id.story_submit_button);
 
                 storySubmitButton.setOnClickListener(new View.OnClickListener() {
@@ -68,8 +77,7 @@ public class MainActivity extends AppCompatActivity
                     public void onClick(View view) {
                         String title = titleInput.getEditableText().toString();
                         String description = descriptionInput.getEditableText().toString();
-                        String author = authorInput.getEditableText().toString();
-                        Story story = new Story(title,description, author);
+                        Story story = new Story(title,description);
                         Gson gson = new Gson();
                         String postBody = gson.toJson(story);
                         JSONObject jsonObject;
@@ -78,24 +86,50 @@ public class MainActivity extends AppCompatActivity
                         } catch (Exception e){
                             return;
                         }
-                        String url = "http://104.236.163.131:9000/api/story/publish";
 
                         // Request a string response from the provided URL.
-                        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(url,jsonObject,
+                        AuthJsonObjectRequest jsonObjectRequest = new AuthJsonObjectRequest(URL_PUBLISH,jsonObject,
                                 new Response.Listener<JSONObject>() {
                                     @Override
                                     public void onResponse(JSONObject response) {
-                                        // Display the first 500 characters of the response string.
                                         System.out.println("It worked!");
                                     }
                                 }, new Response.ErrorListener() {
+                                    @Override
+                                    public void onErrorResponse(VolleyError error) {
+                                         System.out.println("Posting didn't work!");
+                                    }
+                                }
+                        ){
                             @Override
-                            public void onErrorResponse(VolleyError error) {
-                                System.out.println("Posting didn't work!");
+                            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                                try {
+                                    String jsonString = new String(response.data,
+                                            HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
+                                    return Response.success(new JSONObject(jsonString),
+                                            HttpHeaderParser.parseCacheHeaders(response));
+                                } catch (UnsupportedEncodingException e) {
+                                    return Response.error(new ParseError(e));
+                                } catch (JSONException je) {
+                                    Log.v("Volley", "JSONException " + response.statusCode);
+                                    if (response.statusCode == 200)// Added for 200 response
+                                        return Response.success(new JSONObject(),HttpHeaderParser.parseCacheHeaders(response));
+                                    return Response.error(new ParseError(je));
+                                }
                             }
-                        });
-                        // Add the request to the RequestQueue.
-                        queue.add(jsonObjectRequest);
+
+                        };
+                        SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
+                        String emailAddress = credentials.getString("emailAddress", null);
+                        String password = credentials.getString("password", null);
+                        if(emailAddress == null|| password == null){
+                            System.out.println("Credentials do not exist");
+                            return;
+                        } else{
+                            jsonObjectRequest.setEmailAddress(emailAddress);
+                            jsonObjectRequest.setPassword(password);
+                            queue.add(jsonObjectRequest);
+                        }
                     }
                 });
                 dialog.show();
@@ -181,8 +215,9 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
+        if (id == R.id.nav_new_story) {
+            Intent intent = new Intent(getApplicationContext(), WritingActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
