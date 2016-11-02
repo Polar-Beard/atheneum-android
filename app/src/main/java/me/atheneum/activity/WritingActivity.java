@@ -10,7 +10,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.MetricAffectingSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,7 +25,6 @@ import me.atheneum.R;
 public class WritingActivity extends AppCompatActivity {
 
     private boolean actionFormatSizeIsActive = false;
-    private EditText bodyTextInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,23 +37,53 @@ public class WritingActivity extends AppCompatActivity {
         if(toolbarBottom == null){
             return;
         }
-        bodyTextInput = (EditText) findViewById(R.id.editText);
+
         toolbarBottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.action_format_size:
-                        int[] lineBoundaries = getCurrentLineBoundaries();
-                        //Check that the line is not empty
-                        if((lineBoundaries[1] - lineBoundaries[0] > 0)){
-                            SpannableString span  = new SpannableString(bodyTextInput.getText());
-                            RelativeSizeSpan[] formatObj = span.getSpans(lineBoundaries[0], lineBoundaries[1], RelativeSizeSpan.class);
-                            if(formatObj.length == 0){
-                                activateResizeFormat(span,lineBoundaries, item);
-                            } else {
-                                removeResizeFormat(new SpannableString(span.subSequence(lineBoundaries[0],lineBoundaries[1])), formatObj[0], item);
+                        EditText bodyTextInput = (EditText) findViewById(R.id.editText);
+                        int cursorPos = bodyTextInput.getSelectionStart();
+                        int[] lineBoundaries = getCurrentLineBoundaries(bodyTextInput);
+                        SpannableStringBuilder bodyText  = new SpannableStringBuilder(bodyTextInput.getText());
+                        SpannableStringBuilder currentLine = new SpannableStringBuilder(bodyText.subSequence(lineBoundaries[0],lineBoundaries[1]));
+                        RelativeSizeSpan[] formatObj = currentLine.getSpans(0,currentLine.length(),RelativeSizeSpan.class);
+                        /*This checks to see if the array is empty. If it is empty, then there is no
+                            RelativeSizeSpan on the current selection, meaning it needs to be
+                            added. If it is not empty, then the RelativeSizeSpan already exists on
+                            the selected text, and needs to be removed.
+                         */
+                        if(formatObj.length == 0){
+                            bodyText.replace(lineBoundaries[0], lineBoundaries[1], activateResizeFormat(currentLine));
+                            bodyTextInput.setText(bodyText);
+                            item.setIcon(R.drawable.ic_format_size_active);
+                        } else{
+                            currentLine.removeSpan(formatObj[0]);
+                            SpannableStringBuilder updatedString = new SpannableStringBuilder();
+                            /* This gets a bit hacky, but I couldn't figure out a better solution.
+                                Instead of using replace(), the content from the EditText is
+                                reconstructed around the current line, from which the
+                                RelativeSizeSpan has been removed. The reason being that replace()
+                                was preserving the old span, and I couldn't figure out how to
+                                remove it.
+
+                             */
+                            if(lineBoundaries[0]==0){
+                                updatedString.append(currentLine);
+                            }else{
+                                CharSequence textBeforeCurrentLine = bodyText.subSequence(0,lineBoundaries[0]);
+                                updatedString.append(textBeforeCurrentLine);
+                                updatedString.append(currentLine);
                             }
+                            if(lineBoundaries[1]!= bodyText.length()){
+                                CharSequence textAfterCurrentLine = bodyText.subSequence(lineBoundaries[1],bodyText.length());
+                                updatedString.append(textAfterCurrentLine);
+                            }
+                            bodyTextInput.setText(updatedString);
+                            item.setIcon(R.drawable.ic_format_size);
                         }
+                        bodyTextInput.setSelection(cursorPos);
                         break;
                     default:
                         break;
@@ -90,7 +121,7 @@ public class WritingActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private int[] getCurrentLineBoundaries(){
+    private int[] getCurrentLineBoundaries(EditText bodyTextInput){
         int cursorPos = bodyTextInput.getSelectionStart();
         CharSequence enteredText = bodyTextInput.getText();
         //Find nearest line break that precedes the cursor.
@@ -121,20 +152,14 @@ public class WritingActivity extends AppCompatActivity {
         return positions;
     }
 
-    private void activateResizeFormat(Spannable span, int[] boundaries, MenuItem item){
-        int currentCursorPos = bodyTextInput.getSelectionStart();
-        span.setSpan(new RelativeSizeSpan(1.5f),boundaries[0],boundaries[1], Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-        bodyTextInput.setText(span);
-        bodyTextInput.setSelection(currentCursorPos);
-        item.setIcon(R.drawable.ic_format_size_active);
+    private SpannableStringBuilder activateResizeFormat(SpannableStringBuilder text){
+        text.setSpan(new RelativeSizeSpan(1.5f), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return text;
     }
 
-    private void removeResizeFormat(Spannable span, RelativeSizeSpan formatObj, MenuItem item){
-        int currentCursorPos = bodyTextInput.getSelectionStart();
-        span.removeSpan(formatObj);
-        bodyTextInput.setText(span);
-        bodyTextInput.setSelection(currentCursorPos);
-        item.setIcon(R.drawable.ic_format_size);
+    private SpannableString removeResizeFormat(SpannableString text, RelativeSizeSpan formatObj){
+        text.removeSpan(formatObj);
+        return text;
     }
 
 }
