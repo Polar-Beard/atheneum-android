@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:weightSum="1">
 
-        <EditText
+        <view class="me.atheneum.activity.WritingActivity$EditTextCursorWatcher"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:ems="10"

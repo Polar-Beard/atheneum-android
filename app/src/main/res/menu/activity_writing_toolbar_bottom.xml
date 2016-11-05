@@ -3,10 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-    android:id="@+id/action_format_size"
-    android:icon="@drawable/ic_format_size"
-    android:title="@string/action_format_size"
-    app:showAsAction="ifRoom"/>
+        android:id="@+id/action_format_size"
+        android:icon="@drawable/ic_title_inactive"
+        android:title="@string/action_format_size"
+        app:showAsAction="ifRoom"/>
 
+    <item
+        android:id="@+id/action_bold"
+        android:icon="@drawable/ic_bold_inactive"
+        android:title="Bold Text"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_italic"
+        android:icon="@drawable/ic_italic_inactive"
+        android:title="Italicize Text"
+        app:showAsAction="ifRoom"  />
 
 </menu>
