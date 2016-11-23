@@ -27,11 +27,15 @@
 
         <view class="me.atheneum.activity.WritingActivity$EditTextCursorWatcher"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:ems="10"
             android:id="@+id/editText"
             android:cursorVisible="true"
             android:scrollbars="vertical"
-            android:inputType="textMultiLine"/>
+            android:inputType="textMultiLine"
+            android:layout_gravity="top"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"/>
     </LinearLayout>
 </RelativeLayout>

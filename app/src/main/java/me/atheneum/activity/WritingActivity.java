@@ -1,28 +1,51 @@
 package me.atheneum.activity;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.inputmethodservice.KeyboardView;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.style.MetricAffectingSpan;
+import android.text.SpannedString;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.TextView;
+
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+
+import org.json.JSONObject;
 
 import me.atheneum.R;
+import me.atheneum.lists.CustomStyles;
+import me.atheneum.model.Story;
+import me.atheneum.requests.AuthJsonObjectRequest;
+import me.atheneum.util.CustomHtml;
 
 public class WritingActivity extends AppCompatActivity {
 
-    private final static float TITLE = 2.0f;
-    private final static float SUBTITLE = 1.25f;
+    private final static int TITLE_CHAR_LIMIT = 75;
+    private final static int DESCRIPTION_CHAR_LIMIT = 150;
+    private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
+    private static final String PREFS_NAME = "CredentialPrefsFile";
+
+    private static boolean lastCharIsEnter = false;
 
     private static boolean titleIsActive;
     private static boolean subtitleIsActive;
@@ -33,6 +56,7 @@ public class WritingActivity extends AppCompatActivity {
     private static boolean unformattedListIsActive;
 
     private static Toolbar toolbarBottom;
+    private EditText bodyTextInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,14 +69,24 @@ public class WritingActivity extends AppCompatActivity {
         if(toolbarBottom == null){
             return;
         }
-        final EditText bodyTextInput = (EditText) findViewById(R.id.editText);
+        bodyTextInput = (EditText) findViewById(R.id.editText);
+        bodyTextInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if(actionId == EditorInfo.IME_NULL &&
+                        event.getAction() == KeyEvent.ACTION_DOWN){
+                            System.out.println("Enter key pressed");
+                }
+                return true;
+            }
+        });
         toolbarBottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 int cursorPos = bodyTextInput.getSelectionStart();
                 SpannableStringBuilder bodyText  = new SpannableStringBuilder(bodyTextInput.getText());
-                int[] lineBoundaries = getCurrentLineBoundaries(cursorPos,bodyTextInput);
-                int[] wordBoundaries = getCurrentWordBoundaries(cursorPos, bodyTextInput);
+                int[] lineBoundaries = getLineBoundaries(cursorPos, bodyTextInput);
+                int[] wordBoundaries = getWordBoundaries(cursorPos, bodyTextInput);
                 SpannableStringBuilder currentLine = new SpannableStringBuilder(bodyText.subSequence(lineBoundaries[0],lineBoundaries[1]));
                 SpannableStringBuilder currentWord = new SpannableStringBuilder(bodyText.subSequence(wordBoundaries[0], wordBoundaries[1]));
                 switch (item.getItemId()) {
@@ -145,6 +179,7 @@ public class WritingActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
+        RequestQueue queue = Volley.newRequestQueue(this);
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
@@ -152,24 +187,73 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_publish) {
+            //Get first line to use as title
+            int[] titleBounds = getLineBoundaries(0,bodyTextInput);
+            String title = bodyTextInput.getText().toString().substring(0,titleBounds[1]);
+            if(title.length() >= TITLE_CHAR_LIMIT){
+                title = title.substring(0,TITLE_CHAR_LIMIT);
+            }
+            //Get second line to use as description
+            int[] descriptionBounds = getLineBoundaries(titleBounds[1] + 1, bodyTextInput);
+            String description = bodyTextInput.getText().toString().substring(titleBounds[1] + 1, descriptionBounds[1]);
+            if(description.length()>= DESCRIPTION_CHAR_LIMIT){
+                description = description.substring(0,DESCRIPTION_CHAR_LIMIT);
+            }
+            String body = CustomHtml.toHtml(bodyTextInput.getText());
+            Story story = new Story();
+            story.setTitle(title);
+            story.setDescription(description);
+            story.setBody(body);
+            Gson gson = new Gson();
+            String postBody = gson.toJson(story);
+            JSONObject jsonObject;
+            try {
+                jsonObject = new JSONObject(postBody);
+            } catch (Exception e){
+                return true;
+            }
+            AuthJsonObjectRequest jsonObjectRequest = new AuthJsonObjectRequest(URL_PUBLISH,jsonObject,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            System.out.println("It worked!");
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    System.out.println("Posting didn't work!");
+                }
+            }
+            );
+            SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
+            String emailAddress = credentials.getString("emailAddress", null);
+            String password = credentials.getString("password", null);
+            if(emailAddress == null|| password == null){
+                System.out.println("Credentials do not exist");
+                return true;
+            } else{
+                jsonObjectRequest.setEmailAddress(emailAddress);
+                jsonObjectRequest.setPassword(password);
+                queue.add(jsonObjectRequest);
+            }
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-    private static SpannableString getCurrentWord(int cursorPos, EditText editText){
-        int [] wordBoundaries = getCurrentWordBoundaries(cursorPos,editText);
+    private static SpannableString getWord(int cursorPos, EditText editText){
+        int [] wordBoundaries = getWordBoundaries(cursorPos, editText);
         return new SpannableString(editText.getText().subSequence(wordBoundaries[0], wordBoundaries[1]));
     }
 
-    private static int[] getCurrentWordBoundaries(int cursorPos, EditText editText) {
+    private static int[] getWordBoundaries(int cursorPos, EditText editText) {
         return getStringBoundsByCharLimit(cursorPos,editText,' ');
     }
-    private static SpannableString getCurrentLine(int cursorPos, EditText editText){
-        int[] lineBoundaries = getCurrentLineBoundaries(cursorPos, editText);
+    private static SpannableString getLine(int cursorPos, EditText editText){
+        int[] lineBoundaries = getLineBoundaries(cursorPos, editText);
         return new SpannableString(editText.getText().subSequence(lineBoundaries[0],lineBoundaries[1]));
     }
-    private static int[] getCurrentLineBoundaries(int cursorPos, EditText editText) {
+    private static int[] getLineBoundaries(int cursorPos, EditText editText) {
         return getStringBoundsByCharLimit(cursorPos,editText,'\n');
     }
 
@@ -203,18 +287,20 @@ public class WritingActivity extends AppCompatActivity {
     }
 
     private SpannableStringBuilder addTitleSpan(SpannableStringBuilder text){
-        text.setSpan(new RelativeSizeSpan(TITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.setSpan(new RelativeSizeSpan(CustomStyles.TITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return text;
     }
 
     private SpannableStringBuilder removeTitleSpan(SpannableStringBuilder text){
         RelativeSizeSpan[] spans = text.getSpans(0,text.length(),RelativeSizeSpan.class);
-        text.removeSpan(spans[0]);
+        if(spans.length != 0) {
+            text.removeSpan(spans[0]);
+        }
         return text;
     }
 
     private SpannableStringBuilder addSubtitleSpan(SpannableStringBuilder text){
-        text.setSpan(new RelativeSizeSpan(SUBTITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.setSpan(new RelativeSizeSpan(CustomStyles.SUBTITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return text;
     }
 
@@ -235,7 +321,9 @@ public class WritingActivity extends AppCompatActivity {
 
     private SpannableStringBuilder removeStyleSpan(SpannableStringBuilder text){
         StyleSpan[] spans = text.getSpans(0,text.length(),StyleSpan.class);
-        text.removeSpan(spans[0]);
+        if(spans.length != 0){
+            text.removeSpan(spans[0]);
+        }
         return text;
     }
 
@@ -378,11 +466,12 @@ public class WritingActivity extends AppCompatActivity {
 
         @Override
         protected void onSelectionChanged(int selStart, int selEnd) {
-            if(selStart == selEnd) {
-                if(selStart != lastCursorPos && selStart != lastCursorPos + 1) {
+            boolean textChanged = false;
+            SpannableString currentLine = getLine(selStart, this);
+            SpannableString currentWord = getWord(selStart, this);
+            if(selStart == selEnd && selStart != lastCursorPos && selStart != 0) {
+                if(selStart != lastCursorPos + 1) {
                     if (getText() != null) {
-                        SpannableString currentLine = getCurrentLine(selStart, this);
-                        SpannableString currentWord = getCurrentWord(selStart, this);
                         StyleSpan[] wordSpans = currentWord.getSpans(0, currentWord.length(), StyleSpan.class);
                         RelativeSizeSpan[] lineSpans = currentLine.getSpans(0, currentLine.length(), RelativeSizeSpan.class);
                         if(wordSpans.length > 0){
@@ -403,9 +492,9 @@ public class WritingActivity extends AppCompatActivity {
                         if (lineSpans.length > 0) {
                             for (RelativeSizeSpan span : lineSpans) {
                                 float style = span.getSizeChange();
-                                if (style == TITLE) {
+                                if (style == CustomStyles.TITLE) {
                                     setTitleToActive();
-                                } else if (style == SUBTITLE) {
+                                } else if (style == CustomStyles.SUBTITLE) {
                                     setSubtitleToActive();
                                 }
                             }
@@ -415,7 +504,39 @@ public class WritingActivity extends AppCompatActivity {
                         }
                     }
                 }
-                lastCursorPos = selStart;
+
+                //Check to see if Enter is pressed, used to end active formatting states
+                char lastChar = this.getText().charAt(selStart - 1);
+                if(lastChar == '\n'){
+                    setAllToInactive();
+                }
+                else {
+                    if (boldItalicIsActive) {
+                       currentLine.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textChanged = true;
+                    } else if (italicIsActive) {
+                        currentLine.setSpan(new StyleSpan(Typeface.ITALIC), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textChanged = true;
+                    } else if (boldIsActive) {
+                        currentLine.setSpan(new StyleSpan(Typeface.BOLD), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textChanged = true;
+                    }
+                    if (titleIsActive) {
+                        currentLine.setSpan(new RelativeSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textChanged = true;
+                    }
+                    if (subtitleIsActive) {
+                        currentLine.setSpan(new RelativeSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        textChanged = true;
+                    }
+                }
+            }
+            lastCursorPos = selStart;
+            if(textChanged) {
+                int[] bounds = getLineBoundaries(selStart, this);
+                CharSequence text = this.getText().replace(bounds[0], bounds[1], currentLine);
+                this.setText(text);
+                this.setSelection(selStart);
             }
         }
     }

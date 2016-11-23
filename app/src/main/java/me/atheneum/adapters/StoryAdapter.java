@@ -1,6 +1,7 @@
 package me.atheneum.adapters;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.support.v7.widget.RecyclerView;
 import android.text.Layout;
 import android.view.LayoutInflater;
@@ -18,10 +19,13 @@ import me.atheneum.model.Story;
  * Created by Sara on 9/20/2016.
  */
 public class StoryAdapter extends RecyclerView.Adapter<StoryViewHolder> {
-    private List<Story> stories;
 
-    public StoryAdapter(List<Story> stories) {
+    private List<Story> stories;
+    private static View.OnClickListener onClickListener;
+
+    public StoryAdapter(List<Story> stories, View.OnClickListener onClickListener) {
         this.stories = stories;
+        this.onClickListener = onClickListener;
     }
 
     public void setStories(List<Story> stories) {
@@ -33,6 +37,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryViewHolder> {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         View storyView = inflater.inflate(R.layout.list_item_story, parent, false);
+        storyView.setOnClickListener(onClickListener);
         return new StoryViewHolder(storyView);
     }
 

@@ -8,7 +8,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -20,24 +20,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.ParseError;
+
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpHeaderParser;
-import com.android.volley.toolbox.JsonObjectRequest;
+
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,10 +44,10 @@ import me.atheneum.model.Story;
 import me.atheneum.requests.AuthJsonObjectRequest;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
-    private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
-    private static final String PREFS_NAME = "CredentialPrefsFile";
+    private RecyclerView recyclerView;
+    private List<Story> stories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -66,76 +63,8 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Dialog dialog = new Dialog(view.getContext());
-                dialog.setContentView(R.layout.create_story_dialog);
-                final EditText titleInput = (EditText) dialog.findViewById(R.id.title_input);
-                final EditText descriptionInput = (EditText) dialog.findViewById(R.id.description_input);
-                Button storySubmitButton = (Button) dialog.findViewById(R.id.story_submit_button);
-
-                storySubmitButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        String title = titleInput.getEditableText().toString();
-                        String description = descriptionInput.getEditableText().toString();
-                        Story story = new Story(title,description);
-                        Gson gson = new Gson();
-                        String postBody = gson.toJson(story);
-                        JSONObject jsonObject;
-                        try {
-                            jsonObject = new JSONObject(postBody);
-                        } catch (Exception e){
-                            return;
-                        }
-
-                        // Request a string response from the provided URL.
-                        AuthJsonObjectRequest jsonObjectRequest = new AuthJsonObjectRequest(URL_PUBLISH,jsonObject,
-                                new Response.Listener<JSONObject>() {
-                                    @Override
-                                    public void onResponse(JSONObject response) {
-                                        System.out.println("It worked!");
-                                    }
-                                }, new Response.ErrorListener() {
-                                    @Override
-                                    public void onErrorResponse(VolleyError error) {
-                                         System.out.println("Posting didn't work!");
-                                    }
-                                }
-                        ){
-                            @Override
-                            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                                try {
-                                    String jsonString = new String(response.data,
-                                            HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
-                                    return Response.success(new JSONObject(jsonString),
-                                            HttpHeaderParser.parseCacheHeaders(response));
-                                } catch (UnsupportedEncodingException e) {
-                                    return Response.error(new ParseError(e));
-                                } catch (JSONException je) {
-                                    Log.v("Volley", "JSONException " + response.statusCode);
-                                    if (response.statusCode == 200)// Added for 200 response
-                                        return Response.success(new JSONObject(),HttpHeaderParser.parseCacheHeaders(response));
-                                    return Response.error(new ParseError(je));
-                                }
-                            }
-
-                        };
-                        SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
-                        String emailAddress = credentials.getString("emailAddress", null);
-                        String password = credentials.getString("password", null);
-                        if(emailAddress == null|| password == null){
-                            System.out.println("Credentials do not exist");
-                            return;
-                        } else{
-                            jsonObjectRequest.setEmailAddress(emailAddress);
-                            jsonObjectRequest.setPassword(password);
-                            queue.add(jsonObjectRequest);
-                        }
-                    }
-                });
-                dialog.show();
             }
         });
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -145,11 +74,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        //Networking stuff
-        // Instantiate the RequestQueue.
 
         String url = "http://104.236.163.131:9000/api/story/n/100";
-        final StoryAdapter storyAdapter = new StoryAdapter(new ArrayList<Story>());
+        final StoryAdapter storyAdapter = new StoryAdapter(new ArrayList<Story>(), this);
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -158,7 +85,7 @@ public class MainActivity extends AppCompatActivity
                     public void onResponse(String response) {
                         System.out.println("It worked!");
                         Gson gson = new Gson();
-                        List<Story> stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
+                        stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
                         storyAdapter.setStories(stories);
                         storyAdapter.notifyDataSetChanged();
                     }
@@ -170,7 +97,7 @@ public class MainActivity extends AppCompatActivity
                 });
         queue.add(stringRequest);
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view_story);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view_story);
         recyclerView.setAdapter(storyAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -233,5 +160,14 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onClick(View view){
+        int storyPosition = recyclerView.getChildLayoutPosition(view);
+        Story story = stories.get(storyPosition);
+        Intent intent = new Intent(getApplicationContext(), ReadingActivity.class);
+        intent.putExtra("story", story);
+        startActivity(intent);
     }
 }

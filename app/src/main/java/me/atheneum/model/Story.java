@@ -1,16 +1,21 @@
 package me.atheneum.model;
 
+import android.text.SpannableString;
+import android.text.SpannedString;
+
+import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
 /**
  * Created by Sara on 9/20/2016.
  */
-public class Story {
+public class Story implements Serializable{
 
     private UUID storyId;
     private String title;
     private String description;
+    private String body;
     private UUID authorId;
 
     public Story(String title, String description){
@@ -18,36 +23,46 @@ public class Story {
         this.description = description;
     }
 
+    public Story(){
+    };
+
     public UUID getStoryId(){
         return storyId;
-    }
-
-    public void setStoryId(UUID storyId){
-        this.storyId = storyId;
     }
 
     public String getTitle(){
         return title;
     }
 
-    public void setTitle(String title){
-        this.title = title;
-    }
-
     public String getDescription(){
         return description;
     }
 
-    public void setDescription(String description){
-        this.description = description;
+    public String getBody(){
+        return body;
     }
 
     public UUID getAuthorId(){
         return authorId;
     }
 
+    public void setTitle(String title){
+        this.title = title;
+    }
+
+    public void setStoryId(UUID storyId){
+        this.storyId = storyId;
+    }
+
+    public void setDescription(String description){
+        this.description = description;
+    }
+
+    public void setBody(String body){
+        this.body = body;
+    }
+
     public void setAuthorId(UUID authorId){
         this.authorId = authorId;
     }
-
 }

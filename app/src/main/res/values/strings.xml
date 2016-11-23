@@ -8,4 +8,5 @@
     <string name="action_format_size">Resize Text</string>
     <string name="action_publish">Publish</string>
     <string name="title_activity_writing">WritingActivity</string>
+    <string name="title_activity_reading">ReadingActivity</string>
 </resources>

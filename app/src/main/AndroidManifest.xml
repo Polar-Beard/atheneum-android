@@ -24,14 +24,18 @@
         <activity
             android:name=".activity.RegisterActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activity.MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activity.WritingActivity"
             android:label="@string/title_activity_writing"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activity.ReadingActivity"
+            android:label="@string/title_activity_reading"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
