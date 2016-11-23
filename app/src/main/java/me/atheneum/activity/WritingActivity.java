@@ -13,6 +13,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.SpannedString;
+import android.text.style.AbsoluteSizeSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.AttributeSet;
@@ -287,12 +288,12 @@ public class WritingActivity extends AppCompatActivity {
     }
 
     private SpannableStringBuilder addTitleSpan(SpannableStringBuilder text){
-        text.setSpan(new RelativeSizeSpan(CustomStyles.TITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return text;
     }
 
     private SpannableStringBuilder removeTitleSpan(SpannableStringBuilder text){
-        RelativeSizeSpan[] spans = text.getSpans(0,text.length(),RelativeSizeSpan.class);
+        AbsoluteSizeSpan[] spans = text.getSpans(0,text.length(),AbsoluteSizeSpan.class);
         if(spans.length != 0) {
             text.removeSpan(spans[0]);
         }
@@ -300,7 +301,7 @@ public class WritingActivity extends AppCompatActivity {
     }
 
     private SpannableStringBuilder addSubtitleSpan(SpannableStringBuilder text){
-        text.setSpan(new RelativeSizeSpan(CustomStyles.SUBTITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return text;
     }
 
@@ -473,7 +474,7 @@ public class WritingActivity extends AppCompatActivity {
                 if(selStart != lastCursorPos + 1) {
                     if (getText() != null) {
                         StyleSpan[] wordSpans = currentWord.getSpans(0, currentWord.length(), StyleSpan.class);
-                        RelativeSizeSpan[] lineSpans = currentLine.getSpans(0, currentLine.length(), RelativeSizeSpan.class);
+                        AbsoluteSizeSpan[] lineSpans = currentLine.getSpans(0, currentLine.length(), AbsoluteSizeSpan.class);
                         if(wordSpans.length > 0){
                             for(StyleSpan span: wordSpans){
                                 switch (span.getStyle()) {
@@ -490,8 +491,8 @@ public class WritingActivity extends AppCompatActivity {
                             }
                         }
                         if (lineSpans.length > 0) {
-                            for (RelativeSizeSpan span : lineSpans) {
-                                float style = span.getSizeChange();
+                            for (AbsoluteSizeSpan span : lineSpans) {
+                                int style = span.getSize();
                                 if (style == CustomStyles.TITLE) {
                                     setTitleToActive();
                                 } else if (style == CustomStyles.SUBTITLE) {
@@ -522,16 +523,18 @@ public class WritingActivity extends AppCompatActivity {
                         textChanged = true;
                     }
                     if (titleIsActive) {
-                        currentLine.setSpan(new RelativeSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         textChanged = true;
                     }
                     if (subtitleIsActive) {
-                        currentLine.setSpan(new RelativeSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         textChanged = true;
                     }
                 }
             }
-            lastCursorPos = selStart;
+            if(selStart!= 0){
+                lastCursorPos = selStart;
+            }
             if(textChanged) {
                 int[] bounds = getLineBoundaries(selStart, this);
                 CharSequence text = this.getText().replace(bounds[0], bounds[1], currentLine);
