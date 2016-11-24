@@ -51,6 +51,8 @@ public class WritingActivity extends AppCompatActivity {
     private static boolean italicIsActive;
     private static boolean boldItalicIsActive;
 
+    private static boolean formatEmptyLine = false;
+
     private static Toolbar toolbarBottom;
     private EditText bodyTextInput;
 
@@ -72,42 +74,49 @@ public class WritingActivity extends AppCompatActivity {
                 int cursorPos = bodyTextInput.getSelectionStart();
                 SpannableStringBuilder bodyText  = new SpannableStringBuilder(bodyTextInput.getText());
                 int[] lineBoundaries = getLineBoundaries(cursorPos, bodyTextInput);
-                int[] wordBoundaries = getWordBoundaries(cursorPos, bodyTextInput);
+                int[] wordBoundaries = getWordBounds(cursorPos, bodyTextInput);
                 SpannableStringBuilder currentLine = new SpannableStringBuilder(bodyText.subSequence(lineBoundaries[0],lineBoundaries[1]));
                 SpannableStringBuilder currentWord = new SpannableStringBuilder(bodyText.subSequence(wordBoundaries[0], wordBoundaries[1]));
                 switch (item.getItemId()) {
                     case R.id.action_format_size:
                         if(titleIsActive){
-                            currentLine.removeSpan(AbsoluteSizeSpan.class);
-                            currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(),Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentLine,lineBoundaries));
+                            currentLine = removeTitleSpan(currentLine);
+                            currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                                bodyTextInput.setText(updateTextSpan(bodyText,currentLine,lineBoundaries));
+                            bodyTextInput.setSelection(cursorPos);
                             setTitleToInactive();
                             setSubtitleToActive();
                         } else if(subtitleIsActive){
-                            currentLine.removeSpan(AbsoluteSizeSpan.class);
+                            currentLine = removeTitleSpan(currentLine);
                             bodyTextInput.setText(updateTextSpan(bodyText,currentLine,lineBoundaries));
+                            bodyTextInput.setSelection(cursorPos);
                             setSubtitleToInactive();
                         } else{
-                            currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(),Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyText.replace(lineBoundaries[0], lineBoundaries[1], currentLine);
-                            bodyTextInput.setText(bodyText);
+                            if(cursorPos == 0 && !formatEmptyLine){
+                                formatEmptyLine = true;
+                            } else {
+                                currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                                bodyText.replace(lineBoundaries[0], lineBoundaries[1], currentLine);
+                                bodyTextInput.setText(bodyText);
+                                bodyTextInput.setSelection(cursorPos);
+                            }
                             setTitleToActive();
                         }
-                        bodyTextInput.setSelection(cursorPos);
                         break;
                     case R.id.action_bold:
                         if(boldItalicIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
                             currentWord.setSpan(new StyleSpan(Typeface.ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
                             bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
                             setBoldItalicToInactive();
                             setBoldToInactive();
                         } else if(boldIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
+                            //SpannableStringBuilder prevWord = new SpannableStringBuilder(getWord(cursorPos - 1, bodyTextInput));
                             bodyTextInput.setText(updateTextSpan(bodyText, currentWord, wordBoundaries));
                             setBoldToInactive();
                         } else if(italicIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
                             currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
                             bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
                             setBoldToActive();
@@ -122,17 +131,17 @@ public class WritingActivity extends AppCompatActivity {
                         break;
                     case R.id.action_italic:
                         if(boldItalicIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
                             currentWord.setSpan(new StyleSpan(Typeface.BOLD),0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
                             bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
                             setBoldItalicToInactive();
                             setItalicToInactive();
                         } else if(italicIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
                             bodyTextInput.setText(updateTextSpan(bodyText, currentWord, wordBoundaries));
                             setItalicToInactive();
                         } else if(boldIsActive){
-                            currentWord.removeSpan(StyleSpan.class);
+                            currentWord = removeStyleSpan(currentWord);
                             currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC),0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
                             bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
                             setItalicToActive();
@@ -176,22 +185,25 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_publish) {
+            Story story = new Story();
+            String text = bodyTextInput.getText().toString();
             //Get first line to use as title
             int[] titleBounds = getLineBoundaries(0,bodyTextInput);
-            String title = bodyTextInput.getText().toString().substring(0,titleBounds[1]);
+            String title = text.substring(0,titleBounds[1]);
             if(title.length() >= TITLE_CHAR_LIMIT){
                 title = title.substring(0,TITLE_CHAR_LIMIT);
             }
             //Get second line to use as description
-            int[] descriptionBounds = getLineBoundaries(titleBounds[1] + 1, bodyTextInput);
-            String description = bodyTextInput.getText().toString().substring(titleBounds[1] + 1, descriptionBounds[1]);
-            if(description.length()>= DESCRIPTION_CHAR_LIMIT){
-                description = description.substring(0,DESCRIPTION_CHAR_LIMIT);
+            if(titleBounds[1] < text.length()) {
+                int[] descriptionBounds = getLineBoundaries(titleBounds[1] + 1, bodyTextInput);
+                String description = text.substring(titleBounds[1] + 1, descriptionBounds[1]);
+                if (description.length() >= DESCRIPTION_CHAR_LIMIT) {
+                    description = description.substring(0, DESCRIPTION_CHAR_LIMIT);
+                }
+                story.setDescription(description);
             }
             String body = CustomHtml.toHtml(bodyTextInput.getText());
-            Story story = new Story();
             story.setTitle(title);
-            story.setDescription(description);
             story.setBody(body);
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
@@ -231,13 +243,10 @@ public class WritingActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
     private static SpannableString getWord(int cursorPos, EditText editText){
-        int [] wordBoundaries = getWordBoundaries(cursorPos, editText);
+        int [] wordBoundaries = getWordBounds(cursorPos, editText);
         return new SpannableString(editText.getText().subSequence(wordBoundaries[0], wordBoundaries[1]));
     }
 
-    private static int[] getWordBoundaries(int cursorPos, EditText editText) {
-        return getStringBoundsByCharLimit(cursorPos,editText,' ');
-    }
     private static SpannableString getLine(int cursorPos, EditText editText){
         int[] lineBoundaries = getLineBoundaries(cursorPos, editText);
         return new SpannableString(editText.getText().subSequence(lineBoundaries[0],lineBoundaries[1]));
@@ -275,7 +284,36 @@ public class WritingActivity extends AppCompatActivity {
         return new int[] {stringStartPos,stringEndPos};
     }
 
-    private SpannableStringBuilder updateTextSpan(SpannableStringBuilder originalText, SpannableStringBuilder newText, int[] boundaries){
+    private static int[] getWordBounds(int cursorPos,EditText editText){
+        CharSequence enteredText = editText.getText();
+        //Find nearest boundary that precedes the cursor.
+        int stringStartPos = 0;
+        boolean foundStartingBoundary = false;
+        int i = cursorPos - 1;
+        while(!foundStartingBoundary && i > 0 ){
+            if(enteredText.charAt(i) == ' ' || enteredText.charAt(i) == '\n'){
+                stringStartPos = i;
+                foundStartingBoundary = true;
+            }
+            i--;
+        }
+        //Find the next nearest boundary.
+        int stringEndPos = enteredText.length();
+        if(cursorPos != enteredText.length()) {
+            boolean foundEndingBoundary = false;
+            int j = cursorPos;
+            while (!foundEndingBoundary && j < enteredText.length()) {
+                if (enteredText.charAt(j) == ' ' || enteredText.charAt(j) == '\n') {
+                    stringEndPos = j;
+                    foundEndingBoundary = true;
+                }
+                j++;
+            }
+        }
+        return new int[] {stringStartPos,stringEndPos};
+    }
+
+    private static SpannableStringBuilder updateTextSpan(SpannableStringBuilder originalText, SpannableStringBuilder newText, int[] boundaries){
         SpannableStringBuilder updatedText = new SpannableStringBuilder();
         /* This gets a bit hacky, but I couldn't figure out a better solution.
                                 Instead of using replace(), the content from the EditText is
@@ -296,6 +334,25 @@ public class WritingActivity extends AppCompatActivity {
             updatedText.append(textAfterCurrentLine);
         }
         return updatedText;
+    }
+    private SpannableStringBuilder removeTitleSpan(SpannableStringBuilder text){
+        AbsoluteSizeSpan[] spans = text.getSpans(0,text.length(), AbsoluteSizeSpan.class);
+        if(spans.length != 0) {
+            for(AbsoluteSizeSpan span: spans){
+                text.removeSpan(span);
+            }
+        }
+        return text;
+    }
+
+    private SpannableStringBuilder removeStyleSpan(SpannableStringBuilder text){
+        StyleSpan[] spans = text.getSpans(0,text.length(),StyleSpan.class);
+        if(spans.length != 0){
+           for(StyleSpan span: spans){
+               text.removeSpan(span);
+           }
+        }
+        return text;
     }
 
     private static void setBoldToActive(){
@@ -379,7 +436,7 @@ public class WritingActivity extends AppCompatActivity {
 
     public static class EditTextCursorWatcher extends EditText {
 
-        private int lastCursorPos;
+        private int lastCursorPos = 0;
 
         public EditTextCursorWatcher(Context context, AttributeSet attrs,
                                      int defStyle) {
@@ -398,6 +455,23 @@ public class WritingActivity extends AppCompatActivity {
         protected void onSelectionChanged(int selStart, int selEnd) {
             SpannableString currentLine = getLine(selStart, this);
             SpannableString currentWord = getWord(selStart, this);
+            if(formatEmptyLine){
+                formatEmptyLine = false;
+                if(boldItalicIsActive){
+                    currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                } else if(boldIsActive){
+                    currentWord.setSpan(new StyleSpan(Typeface.BOLD), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                } else if(italicIsActive){
+                    currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                }
+                if(titleIsActive){
+                    currentWord.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                } else if(subtitleIsActive){
+                    currentWord.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(),Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+                }
+                this.setText(updateTextSpan(new SpannableStringBuilder(this.getText()), new SpannableStringBuilder(currentWord), new int[] {0,0}));
+                this.setSelection(selStart);
+            }
             if(selStart == selEnd && selStart != lastCursorPos && selStart != 0) {
                 if(selStart != lastCursorPos + 1) {
                     if (getText() != null) {
@@ -442,15 +516,21 @@ public class WritingActivity extends AppCompatActivity {
 
                 //Check to see if Enter is pressed, used to end active formatting states
                 char lastChar = this.getText().charAt(selStart - 1);
+                if(selStart != 0){
+                    lastCursorPos = selStart;
+                }
                 if(lastChar == '\n'){
-                    SpannableString word = getWord(selStart - 1, this);
-                    MetricAffectingSpan[] spans = word.getSpans(0, currentWord.length(),MetricAffectingSpan.class);
+                    SpannableStringBuilder prevLine = new SpannableStringBuilder(getLine(selStart - 1, this));
+                    int[] bounds = getLineBoundaries(selStart - 1, this);
+                    MetricAffectingSpan[] spans = prevLine.getSpans(0, currentWord.length(),MetricAffectingSpan.class);
                     for(MetricAffectingSpan span: spans){
-                        int start = word.getSpanStart(span);
-                        int end = word.getSpanEnd(span);
-                        word.removeSpan(span);
-                        word.setSpan(span,start,end,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        int start = prevLine.getSpanStart(span);
+                        int end = prevLine.getSpanEnd(span);
+                        prevLine.removeSpan(span);
+                        prevLine.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
+                    this.setText(updateTextSpan(new SpannableStringBuilder(this.getText()), prevLine, bounds));
+                    this.setSelection(selStart);
                     setAllToInactive();
                 }
             }

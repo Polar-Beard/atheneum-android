@@ -15,6 +15,12 @@
         android:minHeight="?android:attr/listPreferredItemHeight"
         android:id="@+id/list_item_story_description"
         android:layout_below="@id/list_item_story_title"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?android:attr/listPreferredItemHeight"
+        android:id="@+id/list_item_story_author"
+        android:layout_below="@id/list_item_story_title"/>
 
 
 </RelativeLayout>
