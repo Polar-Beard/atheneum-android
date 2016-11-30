@@ -92,7 +92,7 @@ public class WritingActivity extends AppCompatActivity {
                             bodyTextInput.setSelection(cursorPos);
                             setSubtitleToInactive();
                         } else{
-                            if(cursorPos == 0 && !formatEmptyLine){
+                            if(cursorPos == 0){
                                 formatEmptyLine = true;
                             } else {
                                 currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
