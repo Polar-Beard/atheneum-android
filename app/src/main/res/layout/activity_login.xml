@@ -1,86 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@drawable/login_background">
 
-    <ImageView
-        android:id="@+id/loginImageViewRectangle"
-        android:layout_width="300dp"
-        android:layout_height="250dp"
-        android:layout_alignTop="@+id/activityLoginTextViewTitle"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/rectangle" />
+    <view class="com.satchlapp.view.CustomViewPager"
+        android:id="@+id/activityLoginViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
-    <TextView
-        android:id="@+id/activityLoginTextViewTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="102dp"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="78sp" />
-
-    <TextView
-        android:id="@+id/activityLoginTextViewTagline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/activityLoginTextViewTitle"
-        android:layout_centerHorizontal="true"
-        android:text="The last library you'll ever need."
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="18sp" />
-
-    <ImageView
-        android:id="@+id/loginImageViewLogo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/activityLoginTextViewTagline"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="18dp"
-        android:src="@drawable/satchl_main_icon" />
-
-    <Button
-        android:id="@+id/activityLoginButtonRegister"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/loginImageViewRectangle"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="71dp"
-        android:background="@color/colorPrimary"
-        android:paddingLeft="25dp"
-        android:paddingRight="25dp"
-        android:text="Get Started"
-        android:textAllCaps="false"
-        android:textColor="#ffffff"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/activityLoginButtonRegister"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="15dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/loginTextViewMember"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="5dp"
-            android:text="Already a member?"
-            android:textColor="#ffffff"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/loginTextViewSignIn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sign in"
-            android:textColor="#ffffff"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-</RelativeLayout>
+</LinearLayout>
