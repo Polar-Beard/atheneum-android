@@ -1,8 +1,17 @@
 package com.satchlapp.view;
 
 import android.content.Context;
+import android.graphics.Typeface;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.AbsoluteSizeSpan;
+import android.text.style.MetricAffectingSpan;
+import android.text.style.StyleSpan;
 import android.util.AttributeSet;
 import android.widget.EditText;
+
+import com.satchlapp.lists.CustomStyles;
 
 /**
  * Created by Sara on 1/30/2017.
@@ -11,7 +20,8 @@ public class EditTextCursorWatcher extends EditText {
 
     private OnSelectionChangedListener onSelectionChangedListener;
 
-    public EditTextCursorWatcher(Context context, AttributeSet attrs, int defStyle) {
+    public EditTextCursorWatcher(Context context, AttributeSet attrs,
+                                 int defStyle) {
         super(context, attrs, defStyle);
     }
 
@@ -29,6 +39,8 @@ public class EditTextCursorWatcher extends EditText {
 
     @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
-        onSelectionChangedListener.onSelectionChanged(selStart, selEnd);
+        if(onSelectionChangedListener != null) {
+            onSelectionChangedListener.onSelectionChanged(selStart, selEnd);
+        }
     }
 }
