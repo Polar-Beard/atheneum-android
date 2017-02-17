@@ -24,9 +24,9 @@ public class ReadingActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         Story story = (Story) intent.getSerializableExtra("story");
-        CharSequence bodyText = Html.fromHtml(story.getBody());
+        //CharSequence bodyText = Html.fromHtml(story.getBody());
         TextView bodyView = (TextView) findViewById(R.id.story_body);
-        bodyView.setText(bodyText);
+        //bodyView.setText(bodyText);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {

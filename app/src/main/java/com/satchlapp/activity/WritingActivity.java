@@ -67,7 +67,7 @@ public class WritingActivity extends AppCompatActivity {
         if(toolbarBottom == null){
             return;
         }
-        bodyTextInput = (EditText) findViewById(R.id.editText);
+        /*bodyTextInput = (EditText) findViewById(R.id.editText);
         toolbarBottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -160,7 +160,7 @@ public class WritingActivity extends AppCompatActivity {
                 return true;
             }
         });
-
+*/
         toolbarBottom.inflateMenu(R.menu.activity_writing_toolbar_bottom);
     }
 
@@ -204,7 +204,7 @@ public class WritingActivity extends AppCompatActivity {
             }
             String body = CustomHtml.toHtml(bodyTextInput.getText());
             story.setTitle(title);
-            story.setBody(body);
+            //story.setBody(body);
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
             JSONObject jsonObject;

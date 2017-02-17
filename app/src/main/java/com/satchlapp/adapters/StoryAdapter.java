@@ -35,6 +35,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryViewHolder> {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         View storyView = inflater.inflate(R.layout.list_item_story, parent, false);
+        System.out.println("onCreateViewHolder called! Sound the alarms!");
         storyView.setOnClickListener(onClickListener);
         return new StoryViewHolder(storyView);
     }

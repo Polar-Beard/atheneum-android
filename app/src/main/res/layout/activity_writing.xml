@@ -18,24 +18,13 @@
         android:layout_alignParentBottom="true"
         android:minHeight="?attr/actionBarSize" />
 
-    <LinearLayout
-        android:layout_below="@id/toolbar_top"
-        android:layout_above="@id/toolbar_bottom"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:weightSum="1">
 
-        <view class="com.satchlapp.activity.WritingActivity$EditTextCursorWatcher"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:ems="10"
-            android:id="@+id/editText"
-            android:cursorVisible="true"
-            android:scrollbars="vertical"
-            android:inputType="textMultiLine"
-            android:layout_gravity="top"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"/>
-    </LinearLayout>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/activityWritingRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar_top"
+        android:layout_above="@id/toolbar_bottom">
+    </android.support.v7.widget.RecyclerView>
+
 </RelativeLayout>

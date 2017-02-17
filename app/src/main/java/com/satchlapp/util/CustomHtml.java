@@ -175,9 +175,6 @@ public static String toHtml(Spanned text) {
                 if (style[j] instanceof SubscriptSpan) {
                     out.append("<sub>");
                 }
-                if (style[j] instanceof UnderlineSpan) {
-                    out.append("<u>");
-                }
                 if (style[j] instanceof StrikethroughSpan) {
                     out.append("<strike>");
                 }
@@ -243,9 +240,6 @@ public static String toHtml(Spanned text) {
                 }
                 if (style[j] instanceof StrikethroughSpan) {
                     out.append("</strike>");
-                }
-                if (style[j] instanceof UnderlineSpan) {
-                    out.append("</u>");
                 }
                 if (style[j] instanceof SubscriptSpan) {
                     out.append("</sub>");
