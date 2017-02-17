@@ -92,6 +92,10 @@ public class Story implements Serializable{
             return null;
         }
 
+        if(content.getValue() == null){
+            content.setValue("");
+        }
+
         SpannableString parsedContent = new SpannableString(content.getValue());
 
         //If the content doesn't have any formatting, return the plain string.
@@ -152,6 +156,59 @@ public class Story implements Serializable{
         }
 
         return parsedContent;
+    }
+
+    public static int[] getLinePositions(int referencePos, Content content){
+        return getPositions(referencePos, '\n', content);
+    }
+
+    public static int[] getWordPositions(int referencePos, Content content){
+        return getPositions(referencePos,' ', content);
+    }
+
+    public static int[] getPositions(int referencePos, char boundary, Content content) {
+        if(content.getType() != Constants.CONTENT_TYPE_TEXT){
+            return null;
+        }
+
+        String text = content.getValue();
+
+        if(text == null){
+            return new int[] {0,0};
+        }
+
+        return new int[]{findStartingBoundary(referencePos,boundary, text),
+                findEndBoundary(referencePos,boundary, text)};
+    }
+
+    private static int findStartingBoundary(int referencePos, char boundary, String text){
+        int start = 0;
+        boolean found = false;
+        int i = referencePos - 1;
+        while (!found && i > 0) {
+            if (text.charAt(i) == boundary) {
+                start = i;
+                found = true;
+            }
+            i--;
+        }
+
+        return start;
+    }
+
+    private static int findEndBoundary(int referencePos, char boundary, String text){
+        int end = text.length();
+        boolean found = false;
+        int i = referencePos + 1;
+        while (!found && i < text.length()) {
+            if (text.charAt(i) == boundary) {
+                end = i;
+                found = true;
+            }
+            i++;
+        }
+
+        return end;
     }
 
 

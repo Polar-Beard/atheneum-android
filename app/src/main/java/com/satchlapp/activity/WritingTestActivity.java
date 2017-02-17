@@ -41,7 +41,6 @@ public class WritingTestActivity extends AppCompatActivity {
 
     private Story story;
     private int currentContent;
-    private HtmlTagPositioner htmlTagPositioner;
 
     private int activeEditTextPosition;
     private int lastCursorPosition;
@@ -56,8 +55,6 @@ public class WritingTestActivity extends AppCompatActivity {
         setSupportActionBar(toolbarTop);
 
         toolbarBottom = (Toolbar) findViewById(R.id.toolbar_bottom);
-
-        htmlTagPositioner = new HtmlTagPositioner();
 
         story = new Story();
         currentContent = story.addNewContent();
@@ -92,9 +89,9 @@ public class WritingTestActivity extends AppCompatActivity {
                                 public void onSelectionChanged(int selStart, int selEnd) {
                                     if(selStart != lastCursorPosition
                                             && selStart != 0){
+                                        lastCursorPosition = selStart;
                                         updateContent(selStart);
                                         setEditTextBody(selStart);
-                                        lastCursorPosition = selStart;
                                     }
                                 }
                             }
@@ -239,21 +236,21 @@ public class WritingTestActivity extends AppCompatActivity {
     }*/
 
     private void setBoldToActive(){
-        int[] positions = htmlTagPositioner.setPositionsToWord(currentCursorPosition);
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
         setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD, positions);
         MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_bold);
         item.setIcon(R.drawable.ic_bold_active);
     }
 
     private void setItalicToActive(){
-        int[] positions = htmlTagPositioner.setPositionsToWord(currentCursorPosition);
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
         setFormatting(Constants.QUALIFIER_TYPE_TEXT_ITALIC, positions);
         MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_italic);
         item.setIcon(R.drawable.ic_italic_active);
     }
 
     private void setBoldItalicToActive(){
-        int[] positions = htmlTagPositioner.setPositionsToWord(currentCursorPosition);
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
         setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC, positions);
         toolbarBottom.getMenu().findItem(R.id.action_italic)
                 .setIcon(R.drawable.ic_italic_active);
@@ -262,7 +259,7 @@ public class WritingTestActivity extends AppCompatActivity {
     }
 
     private void setTitleToActive(){
-        int[] positions = htmlTagPositioner.setPositionsToLine(currentCursorPosition);
+        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
         setFormatting(Constants.QUALIFIER_TYPE_TEXT_TITLE, positions);
         MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
         item.setIcon(R.drawable.ic_title_active);
@@ -271,7 +268,7 @@ public class WritingTestActivity extends AppCompatActivity {
     private void setSubtitleToActive(){
         this.setTitleToInactive();
 
-        int[] positions = htmlTagPositioner.setPositionsToLine(currentCursorPosition);
+        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
         setFormatting(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE, positions);
         MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
         item.setIcon(R.drawable.ic_subtitle_active);
