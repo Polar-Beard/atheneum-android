@@ -13,8 +13,6 @@ import android.view.MenuItem;
 import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
-
-import com.satchlapp.HtmlTagPositioner;
 import com.satchlapp.R;
 import com.satchlapp.adapters.WysiwygEditorAdapter;
 import com.satchlapp.lists.Constants;
@@ -164,6 +162,9 @@ public class WritingTestActivity extends AppCompatActivity {
                             setBoldToInactive();
                         }
                         break;
+                    case R.id.action_add_image:
+                        break;
+
                 }
                 setEditTextBody(currentCursorPosition);
                 return true;
@@ -178,6 +179,8 @@ public class WritingTestActivity extends AppCompatActivity {
                 toolbarBottom.getMenu().findItem(R.id.action_bold));
         menuItemMap.put(R.id.action_format_size,
                 toolbarBottom.getMenu().findItem(R.id.action_format_size));
+        menuItemMap.put(R.id.action_add_image,
+                toolbarBottom.getMenu().findItem(R.id.action_add_image));
     }
 
     @Override

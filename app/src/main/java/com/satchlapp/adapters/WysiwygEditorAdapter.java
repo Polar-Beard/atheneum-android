@@ -69,8 +69,8 @@ public class WysiwygEditorAdapter
         }
         else if(viewHolder instanceof ImageViewWithCaptionViewHolder) {
             Picasso.with(context)
-            .load(content.getValue())
-            .into(((ImageViewWithCaptionViewHolder) viewHolder).imageView);
+                    .load(content.getValue())
+                    .into(((ImageViewWithCaptionViewHolder) viewHolder).imageView);
         }
 
     }
@@ -86,7 +86,7 @@ public class WysiwygEditorAdapter
     }
 
     class EditTextViewHolder extends RecyclerView.ViewHolder {
-      EditTextCursorWatcher editText;
+        EditTextCursorWatcher editText;
 
         public EditTextViewHolder(View itemView) {
             super(itemView);
