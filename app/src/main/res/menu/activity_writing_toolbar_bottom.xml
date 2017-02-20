@@ -20,4 +20,10 @@
         android:title="Italicize Text"
         app:showAsAction="ifRoom"  />
 
+    <item
+        android:id="@+id/action_add_image"
+        android:icon="@drawable/ic_image_inactive"
+        android:title="Add Image"
+        app:showAsAction="ifRoom" />
+
 </menu>
