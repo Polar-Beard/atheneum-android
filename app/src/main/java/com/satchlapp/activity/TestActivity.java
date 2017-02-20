@@ -48,13 +48,6 @@ public class TestActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-        buttonWritingTestActivity.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(),WritingTestActivity.class);
-                startActivity(intent);
-            }
-        });
         buttonReadingActivity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

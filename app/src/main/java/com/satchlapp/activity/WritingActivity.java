@@ -1,42 +1,28 @@
 package com.satchlapp.activity;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Typeface;
-
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-
-import android.text.style.AbsoluteSizeSpan;
-
-import android.text.style.MetricAffectingSpan;
-import android.text.style.StyleSpan;
-import android.util.AttributeSet;
-
+import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import android.widget.EditText;
-
-
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
-
-import org.json.JSONObject;
+import android.view.ViewTreeObserver;
+import android.widget.TextView;
 
 import com.satchlapp.R;
-import com.satchlapp.lists.CustomStyles;
+import com.satchlapp.adapters.WysiwygEditorAdapter;
+import com.satchlapp.lists.Constants;
+import com.satchlapp.model.Content;
 import com.satchlapp.model.Story;
-import com.satchlapp.requests.AuthJsonObjectRequest;
-import com.satchlapp.util.CustomHtml;
+import com.satchlapp.view.EditTextCursorWatcher;
+import com.satchlapp.view.OnSelectionChangedListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class WritingActivity extends AppCompatActivity {
 
@@ -45,16 +31,20 @@ public class WritingActivity extends AppCompatActivity {
     private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
     private static final String PREFS_NAME = "CredentialPrefsFile";
 
-    private static boolean titleIsActive;
-    private static boolean subtitleIsActive;
-    private static boolean boldIsActive;
-    private static boolean italicIsActive;
-    private static boolean boldItalicIsActive;
-
-    private static boolean formatEmptyLine = false;
 
     private static Toolbar toolbarBottom;
-    private EditText bodyTextInput;
+    private RecyclerView recyclerView;
+    private EditTextCursorWatcher activeEditText;
+    private int currentCursorPosition;
+
+    private Story story;
+    private int currentContent;
+
+    private int activeEditTextPosition;
+    private int lastCursorPosition;
+
+    private Map<Integer,Integer> activeFormatPositions = new HashMap<>();
+    private Map<Integer, MenuItem> menuItemMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,104 +54,133 @@ public class WritingActivity extends AppCompatActivity {
         setSupportActionBar(toolbarTop);
 
         toolbarBottom = (Toolbar) findViewById(R.id.toolbar_bottom);
-        if(toolbarBottom == null){
-            return;
+
+        story = new Story();
+        currentContent = story.addNewContent();
+        story.getContent(currentContent).setType(Constants.CONTENT_TYPE_TEXT);
+
+        lastCursorPosition = 0;
+
+        recyclerView = (RecyclerView) findViewById(R.id.activityWritingRecyclerView);
+        WysiwygEditorAdapter adapter = new WysiwygEditorAdapter(story.getContents());
+        final LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(layoutManager);
+
+        ViewTreeObserver viewTreeObserverRecyclerView = recyclerView.getViewTreeObserver();
+        if(viewTreeObserverRecyclerView.isAlive()){
+            viewTreeObserverRecyclerView.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    //Try & Catch block in place for using the deprecated method.
+                    try {
+                        recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    } catch (NoSuchMethodError e) {
+                        recyclerView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    }
+
+                    View activeView = layoutManager.findViewByPosition(0);
+
+                    activeEditText = (EditTextCursorWatcher) activeView.findViewById(R.id.listItemWysiwygTextEditText);
+                    activeEditText.setOnSelectionChangedListener(
+                            new OnSelectionChangedListener() {
+                                @Override
+                                public void onSelectionChanged(int selStart, int selEnd) {
+                                    if(selStart != lastCursorPosition
+                                            && selStart != 0){
+                                        lastCursorPosition = selStart;
+                                        getActiveFormats(selStart);
+                                        setIconsToInactive();
+                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_BOLD)){
+                                            setIconOnToolbarBottom(R.id.action_bold,R.drawable.ic_bold_active);
+                                        }
+                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_ITALIC)){
+                                            setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_active);
+                                        }
+                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)){
+                                            setIconOnToolbarBottom(R.id.action_bold,R.drawable.ic_bold_active);
+                                            setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_active);
+                                        }
+                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_TITLE)){
+                                            setIconOnToolbarBottom(R.id.action_format_size,R.drawable.ic_title_active);
+                                        }
+                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE)){
+                                            setIconOnToolbarBottom(R.id.action_format_size,R.drawable.ic_subtitle_active);
+                                        }
+                                    }
+                                }
+                            }
+                    );
+                }
+            });
         }
-        /*bodyTextInput = (EditText) findViewById(R.id.editText);
+
         toolbarBottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                int cursorPos = bodyTextInput.getSelectionStart();
-                SpannableStringBuilder bodyText  = new SpannableStringBuilder(bodyTextInput.getText());
-                int[] lineBoundaries = getLineBoundaries(cursorPos, bodyTextInput);
-                int[] wordBoundaries = getWordBounds(cursorPos, bodyTextInput);
-                SpannableStringBuilder currentLine = new SpannableStringBuilder(bodyText.subSequence(lineBoundaries[0],lineBoundaries[1]));
-                SpannableStringBuilder currentWord = new SpannableStringBuilder(bodyText.subSequence(wordBoundaries[0], wordBoundaries[1]));
+                currentCursorPosition = activeEditText.getSelectionStart();
+                updateContent();
+                getActiveFormats(currentCursorPosition);
+
                 switch (item.getItemId()) {
                     case R.id.action_format_size:
-                        if(titleIsActive){
-                            currentLine = removeTitleSpan(currentLine);
-                            currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                                bodyTextInput.setText(updateTextSpan(bodyText,currentLine,lineBoundaries));
-                            bodyTextInput.setSelection(cursorPos);
-                            setTitleToInactive();
+                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_TITLE)) {
                             setSubtitleToActive();
-                        } else if(subtitleIsActive){
-                            currentLine = removeTitleSpan(currentLine);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentLine,lineBoundaries));
-                            bodyTextInput.setSelection(cursorPos);
+                        } else if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE)) {
                             setSubtitleToInactive();
-                        } else{
-                            if(cursorPos == 0){
-                                formatEmptyLine = true;
-                            } else {
-                                currentLine.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                                bodyText.replace(lineBoundaries[0], lineBoundaries[1], currentLine);
-                                bodyTextInput.setText(bodyText);
-                                bodyTextInput.setSelection(cursorPos);
-                            }
+                        } else {
                             setTitleToActive();
                         }
                         break;
-                    case R.id.action_bold:
-                        if(boldItalicIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            currentWord.setSpan(new StyleSpan(Typeface.ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
-                            setBoldItalicToInactive();
-                            setBoldToInactive();
-                        } else if(boldIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            //SpannableStringBuilder prevWord = new SpannableStringBuilder(getWord(cursorPos - 1, bodyTextInput));
-                            bodyTextInput.setText(updateTextSpan(bodyText, currentWord, wordBoundaries));
-                            setBoldToInactive();
-                        } else if(italicIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
-                            setBoldToActive();
-                            setBoldItalicToActive();
-                        } else{
-                            currentWord.setSpan(new StyleSpan(Typeface.BOLD), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyText.replace(wordBoundaries[0], wordBoundaries[1], currentWord);
-                            bodyTextInput.setText(bodyText);
-                            setBoldToActive();
-                        }
-                        bodyTextInput.setSelection(cursorPos);
-                        break;
                     case R.id.action_italic:
-                        if(boldItalicIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            currentWord.setSpan(new StyleSpan(Typeface.BOLD),0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
+                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
                             setBoldItalicToInactive();
+                            setBoldToActive();
+                        } else if (!isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
+                            if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
+                                setBoldItalicToActive();
+                                setBoldToInactive();
+                            } else {
+                                setItalicToActive();
+                            }
+                        } else {
                             setItalicToInactive();
-                        } else if(italicIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            bodyTextInput.setText(updateTextSpan(bodyText, currentWord, wordBoundaries));
-                            setItalicToInactive();
-                        } else if(boldIsActive){
-                            currentWord = removeStyleSpan(currentWord);
-                            currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC),0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyTextInput.setText(updateTextSpan(bodyText,currentWord,wordBoundaries));
-                            setItalicToActive();
-                            setBoldItalicToActive();
-                        } else{
-                            currentWord.setSpan(new StyleSpan(Typeface.ITALIC),0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                            bodyText.replace(wordBoundaries[0], wordBoundaries[1], currentWord);
-                            bodyTextInput.setText(bodyText);
-                            setItalicToActive();
                         }
-                        bodyTextInput.setSelection(cursorPos);
                         break;
-                    default:
+                    case R.id.action_bold:
+                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
+                            setBoldItalicToInactive();
+                            setItalicToActive();
+                        } else if (!isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
+                            if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
+                                setBoldItalicToActive();
+                                setItalicToInactive();
+                            } else {
+                                setBoldToActive();
+                            }
+                        } else {
+                            setBoldToInactive();
+                        }
                         break;
+                    case R.id.action_add_image:
+                        break;
+
                 }
+                setEditTextBody(currentCursorPosition);
                 return true;
             }
         });
-*/
+
         toolbarBottom.inflateMenu(R.menu.activity_writing_toolbar_bottom);
+        menuItemMap = new HashMap<>();
+        menuItemMap.put(R.id.action_italic,
+                toolbarBottom.getMenu().findItem(R.id.action_italic));
+        menuItemMap.put(R.id.action_bold,
+                toolbarBottom.getMenu().findItem(R.id.action_bold));
+        menuItemMap.put(R.id.action_format_size,
+                toolbarBottom.getMenu().findItem(R.id.action_format_size));
+        menuItemMap.put(R.id.action_add_image,
+                toolbarBottom.getMenu().findItem(R.id.action_add_image));
     }
 
     @Override
@@ -171,7 +190,7 @@ public class WritingActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
+    /*@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -204,7 +223,7 @@ public class WritingActivity extends AppCompatActivity {
             }
             String body = CustomHtml.toHtml(bodyTextInput.getText());
             story.setTitle(title);
-            //story.setBody(body);
+            story.setBody(body);
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
             JSONObject jsonObject;
@@ -241,298 +260,143 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-    private static SpannableString getWord(int cursorPos, EditText editText){
-        int [] wordBoundaries = getWordBounds(cursorPos, editText);
-        return new SpannableString(editText.getText().subSequence(wordBoundaries[0], wordBoundaries[1]));
+    }*/
+
+    private void setBoldToActive(){
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
+        setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD, positions);
+        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_active);
     }
 
-    private static SpannableString getLine(int cursorPos, EditText editText){
-        int[] lineBoundaries = getLineBoundaries(cursorPos, editText);
-        return new SpannableString(editText.getText().subSequence(lineBoundaries[0],lineBoundaries[1]));
-    }
-    private static int[] getLineBoundaries(int cursorPos, EditText editText) {
-        return getStringBoundsByCharLimit(cursorPos,editText,'\n');
+    private void setItalicToActive(){
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
+        setFormatting(Constants.QUALIFIER_TYPE_TEXT_ITALIC, positions);
+        setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_active);
     }
 
-    private static int[] getStringBoundsByCharLimit(int cursorPos,EditText editText,char boundary){
-        CharSequence enteredText = editText.getText();
-        //Find nearest boundary that precedes the cursor.
-        int stringStartPos = 0;
-        boolean foundStartingBoundary = false;
-        int i = cursorPos - 1;
-        while(!foundStartingBoundary && i > 0 ){
-            if(enteredText.charAt(i) == boundary){
-                stringStartPos = i;
-                foundStartingBoundary = true;
+    private void setBoldItalicToActive(){
+        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
+        setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC, positions);
+        setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_active);
+        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_active);
+    }
+
+    private void setTitleToActive(){
+        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
+        setFormatting(Constants.QUALIFIER_TYPE_TEXT_TITLE, positions);
+        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_active);
+    }
+
+    private void setSubtitleToActive(){
+        this.setTitleToInactive();
+
+        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
+        setFormatting(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE, positions);
+        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_subtitle_active);
+    }
+
+    private void setBoldToInactive(){
+        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_BOLD);
+        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_BOLD);
+        story.getContent(currentContent).removeQualifier(pos);
+
+        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
+    }
+
+    private void setItalicToInactive(){
+        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
+        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
+        story.getContent(currentContent).removeQualifier(pos);
+
+        setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_inactive);
+    }
+
+    private void setBoldItalicToInactive(){
+        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
+        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
+        story.getContent(currentContent).removeQualifier(pos);
+
+        setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_inactive);
+        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
+    }
+
+    private void setTitleToInactive(){
+        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_TITLE);
+        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_TITLE);
+        story.getContent(currentContent).removeQualifier(pos);
+
+        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
+    }
+
+    private void setSubtitleToInactive(){
+        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
+        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
+        story.getContent(currentContent).removeQualifier(pos);
+
+        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
+    }
+
+    private void setEditTextBody(int cursorPosition){
+        activeEditText.setText(Story.parseTextContent(story.getContent(currentContent)),
+                TextView.BufferType.EDITABLE);
+        activeEditText.setSelection(cursorPosition);
+    }
+
+    private void setFormatting(int formatType, int[] positions){
+        Content.Qualifier qualifier = story.getContent(currentContent).addNewQualifier();
+        qualifier.setType(formatType);
+        qualifier.addNewSpecification()
+                .setType("int")
+                .setName("starting_position")
+                .setValue(String.valueOf(positions[0]));
+        qualifier.addNewSpecification()
+                .setType("int")
+                .setName("ending_position")
+                .setValue(String.valueOf(positions[1]));
+    }
+
+    private boolean isFormatActive(int formatType){
+        return activeFormatPositions.containsKey(formatType);
+    }
+
+    private void updateContent(){
+        story.getContent(currentContent).setValue(activeEditText.getText().toString());
+    }
+
+    private void updateFormatting(int cursorPosition){
+        if(isFormattingActive()){
+            for(Integer integer: activeFormatPositions.values()){
+                story.getContent(currentContent)
+                        .getQualifier(integer)
+                        .getSpecifications()
+                        .get(1)
+                        .setValue(cursorPosition + "")
+                ;
             }
-            i--;
-        }
-        //Find the next nearest boundary.
-        int stringEndPos = enteredText.length();
-        if(cursorPos != enteredText.length()) {
-            boolean foundEndingBoundary = false;
-            int j = cursorPos;
-            while (!foundEndingBoundary && j < enteredText.length()) {
-                if (enteredText.charAt(j) == boundary) {
-                    stringEndPos = j;
-                    foundEndingBoundary = true;
-                }
-                j++;
-            }
-        }
-        return new int[] {stringStartPos,stringEndPos};
-    }
-
-    private static int[] getWordBounds(int cursorPos,EditText editText){
-        CharSequence enteredText = editText.getText();
-        //Find nearest boundary that precedes the cursor.
-        int stringStartPos = 0;
-        boolean foundStartingBoundary = false;
-        int i = cursorPos - 1;
-        while(!foundStartingBoundary && i > 0 ){
-            if(enteredText.charAt(i) == ' ' || enteredText.charAt(i) == '\n'){
-                stringStartPos = i;
-                foundStartingBoundary = true;
-            }
-            i--;
-        }
-        //Find the next nearest boundary.
-        int stringEndPos = enteredText.length();
-        if(cursorPos != enteredText.length()) {
-            boolean foundEndingBoundary = false;
-            int j = cursorPos;
-            while (!foundEndingBoundary && j < enteredText.length()) {
-                if (enteredText.charAt(j) == ' ' || enteredText.charAt(j) == '\n') {
-                    stringEndPos = j;
-                    foundEndingBoundary = true;
-                }
-                j++;
-            }
-        }
-        return new int[] {stringStartPos,stringEndPos};
-    }
-
-    private static SpannableStringBuilder updateTextSpan(SpannableStringBuilder originalText, SpannableStringBuilder newText, int[] boundaries){
-        SpannableStringBuilder updatedText = new SpannableStringBuilder();
-        /* This gets a bit hacky, but I couldn't figure out a better solution.
-                                Instead of using replace(), the content from the EditText is
-                                reconstructed around the current line, from which the
-                                old span has been removed. The reason being that replace()
-                                was preserving the old span, and I couldn't figure out how to
-                                remove it.
-                             */
-        if(boundaries[0]== 0){
-            updatedText.append(newText);
-        } else{
-            CharSequence textBeforeCurrentLine = originalText.subSequence(0,boundaries[0]);
-            updatedText.append(textBeforeCurrentLine);
-            updatedText.append(newText);
-        }
-        if(boundaries[1]!= originalText.length()){
-            CharSequence textAfterCurrentLine = originalText.subSequence(boundaries[1], originalText.length());
-            updatedText.append(textAfterCurrentLine);
-        }
-        return updatedText;
-    }
-    private SpannableStringBuilder removeTitleSpan(SpannableStringBuilder text){
-        AbsoluteSizeSpan[] spans = text.getSpans(0,text.length(), AbsoluteSizeSpan.class);
-        if(spans.length != 0) {
-            for(AbsoluteSizeSpan span: spans){
-                text.removeSpan(span);
-            }
-        }
-        return text;
-    }
-
-    private SpannableStringBuilder removeStyleSpan(SpannableStringBuilder text){
-        StyleSpan[] spans = text.getSpans(0,text.length(),StyleSpan.class);
-        if(spans.length != 0){
-           for(StyleSpan span: spans){
-               text.removeSpan(span);
-           }
-        }
-        return text;
-    }
-
-    private static void setBoldToActive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_bold);
-        item.setIcon(R.drawable.ic_bold_active);
-        boldIsActive = true;
-        if(italicIsActive){
-            setBoldItalicToActive();
         }
     }
 
-    private static void setItalicToActive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_italic);
-        item.setIcon(R.drawable.ic_italic_active);
-        italicIsActive = true;
-        if(boldIsActive){
-            setBoldItalicToActive();
-        }
+    private boolean isFormattingActive(){
+        return activeFormatPositions.size() > 0;
     }
 
-    private static void setBoldItalicToActive(){
-        boldItalicIsActive = true;
+    private void setIconOnToolbarBottom(int item, int icon){
+        menuItemMap.get(item).setIcon(icon);
     }
 
-    private static void setTitleToActive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
-        item.setIcon(R.drawable.ic_title_active);
-        subtitleIsActive = false;
-        titleIsActive = true;
+    private void setIconsToInactive(){
+        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
+        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
+        setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_inactive);
     }
 
-    private static void setSubtitleToActive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
-        item.setIcon(R.drawable.ic_subtitle_active);
-        titleIsActive = false;
-        subtitleIsActive = true;
-    }
-
-    private static void setBoldToInactive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_bold);
-        item.setIcon(R.drawable.ic_bold_inactive);
-        boldIsActive = false;
-        if(boldItalicIsActive){
-            setBoldItalicToInactive();
-        }
-    }
-
-    private static void setItalicToInactive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_italic);
-        item.setIcon(R.drawable.ic_italic_inactive);
-        italicIsActive = false;
-        if(boldItalicIsActive){
-            setBoldItalicToInactive();
-        }
-    }
-
-    private static void setBoldItalicToInactive(){
-        boldItalicIsActive = false;
-    }
-
-    private static void setTitleToInactive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
-        item.setIcon(R.drawable.ic_title_inactive);
-        titleIsActive = false;
-    }
-
-    private static void setSubtitleToInactive(){
-        MenuItem item = toolbarBottom.getMenu().findItem(R.id.action_format_size);
-        item.setIcon(R.drawable.ic_title_inactive);
-        subtitleIsActive = false;
-    }
-
-    private static void setAllToInactive(){
-        setBoldToInactive();
-        setItalicToInactive();
-        setBoldItalicToInactive();
-        setTitleToInactive();
-        setSubtitleToInactive();
-    }
-
-
-    public static class EditTextCursorWatcher extends EditText {
-
-        private int lastCursorPos = 0;
-
-        public EditTextCursorWatcher(Context context, AttributeSet attrs,
-                                     int defStyle) {
-            super(context, attrs, defStyle);
-        }
-
-        public EditTextCursorWatcher(Context context, AttributeSet attrs) {
-            super(context, attrs);
-        }
-
-        public EditTextCursorWatcher(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected void onSelectionChanged(int selStart, int selEnd) {
-            SpannableString currentLine = getLine(selStart, this);
-            SpannableString currentWord = getWord(selStart, this);
-            if(formatEmptyLine){
-                formatEmptyLine = false;
-                if(boldItalicIsActive){
-                    currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                } else if(boldIsActive){
-                    currentWord.setSpan(new StyleSpan(Typeface.BOLD), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                } else if(italicIsActive){
-                    currentWord.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, currentWord.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                }
-                if(titleIsActive){
-                    currentWord.setSpan(new AbsoluteSizeSpan(CustomStyles.TITLE), 0, currentLine.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                } else if(subtitleIsActive){
-                    currentWord.setSpan(new AbsoluteSizeSpan(CustomStyles.SUBTITLE), 0, currentLine.length(),Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-                }
-                this.setText(updateTextSpan(new SpannableStringBuilder(this.getText()), new SpannableStringBuilder(currentWord), new int[] {0,0}));
-                this.setSelection(selStart);
-            }
-            if(selStart == selEnd && selStart != lastCursorPos && selStart != 0) {
-                if(selStart != lastCursorPos + 1) {
-                    if (getText() != null) {
-                        StyleSpan[] wordSpans = currentWord.getSpans(0, currentWord.length(), StyleSpan.class);
-                        AbsoluteSizeSpan[] lineSpans = currentLine.getSpans(0, currentLine.length(), AbsoluteSizeSpan.class);
-                        if(wordSpans.length > 0){
-                            for(StyleSpan span: wordSpans){
-                                switch (span.getStyle()) {
-                                    case Typeface.BOLD:
-                                        setBoldToActive();
-                                        break;
-                                    case Typeface.ITALIC:
-                                        setItalicToActive();
-                                        break;
-                                    case Typeface.BOLD_ITALIC:
-                                        setBoldItalicToActive();
-                                        break;
-                                }
-                            }
-                        }
-                        if (lineSpans.length > 0) {
-                            for (AbsoluteSizeSpan span : lineSpans) {
-                                int style = span.getSize();
-                                if (style == CustomStyles.TITLE) {
-                                    setTitleToActive();
-                                } else if (style == CustomStyles.SUBTITLE) {
-                                    setSubtitleToActive();
-                                }
-                            }
-                        }
-                        if(wordSpans.length == 0){
-                            setBoldItalicToInactive();
-                            setBoldToInactive();
-                            setItalicToInactive();
-                        }
-                        if(lineSpans.length == 0){
-                            setTitleToInactive();
-                            setSubtitleToInactive();
-                        }
-                    }
-                }
-
-                //Check to see if Enter is pressed, used to end active formatting states
-                char lastChar = this.getText().charAt(selStart - 1);
-                if(selStart != 0){
-                    lastCursorPos = selStart;
-                }
-                if(lastChar == '\n'){
-                    SpannableStringBuilder prevLine = new SpannableStringBuilder(getLine(selStart - 1, this));
-                    int[] bounds = getLineBoundaries(selStart - 1, this);
-                    MetricAffectingSpan[] spans = prevLine.getSpans(0, currentWord.length(),MetricAffectingSpan.class);
-                    for(MetricAffectingSpan span: spans){
-                        int start = prevLine.getSpanStart(span);
-                        int end = prevLine.getSpanEnd(span);
-                        prevLine.removeSpan(span);
-                        prevLine.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                    this.setText(updateTextSpan(new SpannableStringBuilder(this.getText()), prevLine, bounds));
-                    this.setSelection(selStart);
-                    setAllToInactive();
-                }
+    private void getActiveFormats(int currentCursorPosition){
+        activeFormatPositions.clear();
+        for(int i = 0; i < story.getContent(currentContent).getQualifiers().size(); i++){
+            Content.Qualifier q = story.getContent(currentContent).getQualifier(i);
+            if(Integer.valueOf(q.getSpecification(0).getValue())<= currentCursorPosition &&
+                    currentCursorPosition <= Integer.valueOf(q.getSpecification(1).getValue())){
+                activeFormatPositions.put(q.getType(), i);
             }
         }
     }
