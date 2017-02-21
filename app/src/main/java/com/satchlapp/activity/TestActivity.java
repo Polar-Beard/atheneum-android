@@ -14,7 +14,6 @@ public class TestActivity extends AppCompatActivity {
     private Button buttonLoginActivity;
     private Button buttonMainActivity;
     private Button buttonReadingActivity;
-    private Button buttonWritingTestActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +23,6 @@ public class TestActivity extends AppCompatActivity {
         buttonLoginActivity = (Button) findViewById(R.id.testActivityButtonLoginActivity);
         buttonMainActivity = (Button) findViewById(R.id.testActivityButtonMainActivity);
         buttonWritingActivity = (Button) findViewById(R.id.testActivityButtonWritingActivity);
-        buttonWritingTestActivity = (Button) findViewById(R.id.testActivityButtonWritingTestActivity);
         buttonReadingActivity = (Button) findViewById(R.id.testActivityButtonReadingActivity);
 
         buttonLoginActivity.setOnClickListener(new View.OnClickListener() {

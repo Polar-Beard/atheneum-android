@@ -1,5 +1,7 @@
 package com.satchlapp.activity;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -10,7 +12,6 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.satchlapp.R;
@@ -18,8 +19,8 @@ import com.satchlapp.adapters.WysiwygEditorAdapter;
 import com.satchlapp.lists.Constants;
 import com.satchlapp.model.Content;
 import com.satchlapp.model.Story;
+import com.satchlapp.util.TextContentFormatter;
 import com.satchlapp.view.EditTextCursorWatcher;
-import com.satchlapp.view.OnSelectionChangedListener;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class WritingActivity extends AppCompatActivity {
 
     private final static int TITLE_CHAR_LIMIT = 75;
     private final static int DESCRIPTION_CHAR_LIMIT = 150;
+    private final static int PICK_IMAGE_REQUEST = 100;
     private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
     private static final String PREFS_NAME = "CredentialPrefsFile";
 
@@ -35,15 +37,17 @@ public class WritingActivity extends AppCompatActivity {
     private static Toolbar toolbarBottom;
     private RecyclerView recyclerView;
     private EditTextCursorWatcher activeEditText;
+    private WysiwygEditorAdapter adapter;
     private int currentCursorPosition;
+    private LinearLayoutManager layoutManager;
 
     private Story story;
-    private int currentContent;
+    private Content currentContent;
 
     private int activeEditTextPosition;
-    private int lastCursorPosition;
 
-    private Map<Integer,Integer> activeFormatPositions = new HashMap<>();
+    private TextContentFormatter formatter;
+
     private Map<Integer, MenuItem> menuItemMap;
 
     @Override
@@ -55,119 +59,83 @@ public class WritingActivity extends AppCompatActivity {
 
         toolbarBottom = (Toolbar) findViewById(R.id.toolbar_bottom);
 
+        formatter = new TextContentFormatter();
+
         story = new Story();
-        currentContent = story.addNewContent();
-        story.getContent(currentContent).setType(Constants.CONTENT_TYPE_TEXT);
-
-        lastCursorPosition = 0;
-
-        recyclerView = (RecyclerView) findViewById(R.id.activityWritingRecyclerView);
-        WysiwygEditorAdapter adapter = new WysiwygEditorAdapter(story.getContents());
-        final LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(layoutManager);
-
-        ViewTreeObserver viewTreeObserverRecyclerView = recyclerView.getViewTreeObserver();
-        if(viewTreeObserverRecyclerView.isAlive()){
-            viewTreeObserverRecyclerView.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    //Try & Catch block in place for using the deprecated method.
-                    try {
-                        recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    } catch (NoSuchMethodError e) {
-                        recyclerView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                    }
-
-                    View activeView = layoutManager.findViewByPosition(0);
-
-                    activeEditText = (EditTextCursorWatcher) activeView.findViewById(R.id.listItemWysiwygTextEditText);
-                    activeEditText.setOnSelectionChangedListener(
-                            new OnSelectionChangedListener() {
-                                @Override
-                                public void onSelectionChanged(int selStart, int selEnd) {
-                                    if(selStart != lastCursorPosition
-                                            && selStart != 0){
-                                        lastCursorPosition = selStart;
-                                        getActiveFormats(selStart);
-                                        setIconsToInactive();
-                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_BOLD)){
-                                            setIconOnToolbarBottom(R.id.action_bold,R.drawable.ic_bold_active);
-                                        }
-                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_ITALIC)){
-                                            setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_active);
-                                        }
-                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)){
-                                            setIconOnToolbarBottom(R.id.action_bold,R.drawable.ic_bold_active);
-                                            setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_active);
-                                        }
-                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_TITLE)){
-                                            setIconOnToolbarBottom(R.id.action_format_size,R.drawable.ic_title_active);
-                                        }
-                                        if(activeFormatPositions.containsKey(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE)){
-                                            setIconOnToolbarBottom(R.id.action_format_size,R.drawable.ic_subtitle_active);
-                                        }
-                                    }
-                                }
-                            }
-                    );
-                }
-            });
-        }
+        Content content = new Content();
+        content.setType(Constants.CONTENT_TYPE_TEXT);
+        story.addContent(content);
+        currentContent = content;
 
         toolbarBottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                currentCursorPosition = activeEditText.getSelectionStart();
-                updateContent();
-                getActiveFormats(currentCursorPosition);
-
-                switch (item.getItemId()) {
-                    case R.id.action_format_size:
-                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_TITLE)) {
-                            setSubtitleToActive();
-                        } else if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE)) {
-                            setSubtitleToInactive();
-                        } else {
-                            setTitleToActive();
-                        }
-                        break;
-                    case R.id.action_italic:
-                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
-                            setBoldItalicToInactive();
-                            setBoldToActive();
-                        } else if (!isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
-                            if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
-                                setBoldItalicToActive();
-                                setBoldToInactive();
-                            } else {
-                                setItalicToActive();
-                            }
-                        } else {
-                            setItalicToInactive();
-                        }
-                        break;
-                    case R.id.action_bold:
-                        if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
-                            setBoldItalicToInactive();
-                            setItalicToActive();
-                        } else if (!isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
-                            if (isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
-                                setBoldItalicToActive();
-                                setItalicToInactive();
-                            } else {
-                                setBoldToActive();
-                            }
-                        } else {
-                            setBoldToInactive();
-                        }
-                        break;
-                    case R.id.action_add_image:
-                        break;
-
+                if(item.getItemId() == R.id.action_add_image){
+                    Intent intent = new Intent();
+                    // Show only images, no videos or anything else
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    // Always show the chooser (if there are multiple options available)
+                    startActivityForResult(Intent.createChooser(intent, "Image"), PICK_IMAGE_REQUEST);
+                    return true;
                 }
-                setEditTextBody(currentCursorPosition);
-                return true;
+
+                View focusedChild = layoutManager.getFocusedChild();
+                if(focusedChild instanceof EditTextCursorWatcher){
+                    activeEditText = (EditTextCursorWatcher) focusedChild;
+                    currentContent = story.getContent(layoutManager.getPosition(focusedChild));
+                    currentCursorPosition = activeEditText.getSelectionStart();
+                    updateContent();
+                    formatter.findActiveFormattingPositions(currentContent, currentCursorPosition);
+
+                    switch (item.getItemId()) {
+                        case R.id.action_format_size:
+                            if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_TITLE)) {
+                                setSubtitleToActive();
+                            } else if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE)) {
+                                setSubtitleToInactive();
+                            } else {
+                                setTitleToActive();
+                            }
+                            break;
+                        case R.id.action_italic:
+                            if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
+                                setBoldItalicToInactive();
+                                setBoldToActive();
+                            } else if (!formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
+                                if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
+                                    setBoldItalicToActive();
+                                    setBoldToInactive();
+                                } else {
+                                    setItalicToActive();
+                                }
+                            } else {
+                                setItalicToInactive();
+                            }
+                            break;
+                        case R.id.action_bold:
+                            if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC)) {
+                                setBoldItalicToInactive();
+                                setItalicToActive();
+                            } else if (!formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_BOLD)) {
+                                if (formatter.isFormatActive(Constants.QUALIFIER_TYPE_TEXT_ITALIC)) {
+                                    setBoldItalicToActive();
+                                    setItalicToInactive();
+                                } else {
+                                    setBoldToActive();
+                                }
+                            } else {
+                                setBoldToInactive();
+                            }
+                            break;
+                    }
+
+                    setEditTextBody(currentCursorPosition);
+                    return true;
+                }
+
+                return false;
+
             }
         });
 
@@ -181,6 +149,42 @@ public class WritingActivity extends AppCompatActivity {
                 toolbarBottom.getMenu().findItem(R.id.action_format_size));
         menuItemMap.put(R.id.action_add_image,
                 toolbarBottom.getMenu().findItem(R.id.action_add_image));
+
+        recyclerView = (RecyclerView) findViewById(R.id.activityWritingRecyclerView);
+        adapter = new WysiwygEditorAdapter(story.getContents(), menuItemMap);
+        layoutManager = new LinearLayoutManager(this);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(layoutManager);
+
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST
+                && resultCode == RESULT_OK
+                && data != null
+                && data.getData() != null) {
+
+            //Add image to RecyclerView
+            Uri uri = data.getData();
+            Content content = new Content();
+            content.setType(Constants.CONTENT_TYPE_IMAGE_WITH_CAPTION);
+            content.setValue(uri.toString());
+            story.addContent(content);
+
+            //Add new EditText beneath image
+            content = new Content();
+            content.setType(Constants.CONTENT_TYPE_TEXT);
+            content.setValue("");
+            story.addContent(content);
+            currentContent = content;
+
+            adapter.notifyItemInserted(story.getContents().size() - 1);
+
+        }
     }
 
     @Override
@@ -221,7 +225,7 @@ public class WritingActivity extends AppCompatActivity {
                 }
                 story.setDescription(description);
             }
-            String body = CustomHtml.toHtml(bodyTextInput.getText());
+            String body = bodyTextInput.getText();
             story.setTitle(title);
             story.setBody(body);
             Gson gson = new Gson();
@@ -263,107 +267,90 @@ public class WritingActivity extends AppCompatActivity {
     }*/
 
     private void setBoldToActive(){
-        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
-        setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD, positions);
+        int[] positions = formatter.getWordPositions(currentCursorPosition, currentContent);
+        formatter.setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD, positions, currentContent);
         setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_active);
     }
 
     private void setItalicToActive(){
-        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
-        setFormatting(Constants.QUALIFIER_TYPE_TEXT_ITALIC, positions);
+        int[] positions = formatter.getWordPositions(currentCursorPosition, currentContent);
+        formatter.setFormatting(Constants.QUALIFIER_TYPE_TEXT_ITALIC, positions, currentContent);
         setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_active);
     }
 
     private void setBoldItalicToActive(){
-        int[] positions = Story.getWordPositions(currentCursorPosition, story.getContent(currentContent));
-        setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC, positions);
+        int[] positions = formatter.getWordPositions(currentCursorPosition, currentContent);
+        formatter.setFormatting(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC, positions, currentContent);
         setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_active);
         setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_active);
     }
 
     private void setTitleToActive(){
-        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
-        setFormatting(Constants.QUALIFIER_TYPE_TEXT_TITLE, positions);
+        int[] positions = formatter.getLinePositions(currentCursorPosition, currentContent);
+        formatter.setFormatting(Constants.QUALIFIER_TYPE_TEXT_TITLE, positions, currentContent);
         setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_active);
     }
 
     private void setSubtitleToActive(){
         this.setTitleToInactive();
 
-        int[] positions = Story.getLinePositions(currentCursorPosition, story.getContent(currentContent));
-        setFormatting(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE, positions);
+        int[] positions = formatter.getLinePositions(currentCursorPosition, currentContent);
+        formatter.setFormatting(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE, positions, currentContent);
         setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_subtitle_active);
     }
 
     private void setBoldToInactive(){
-        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_BOLD);
-        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_BOLD);
-        story.getContent(currentContent).removeQualifier(pos);
+        int pos = formatter.getActiveFormatIndex(Constants.QUALIFIER_TYPE_TEXT_BOLD);
+        formatter.removeActiveFormat(Constants.QUALIFIER_TYPE_TEXT_BOLD);
+        currentContent.removeQualifier(pos);
 
         setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
     }
 
     private void setItalicToInactive(){
-        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
-        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
-        story.getContent(currentContent).removeQualifier(pos);
+        int pos = formatter.getActiveFormatIndex(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
+        formatter.removeActiveFormat(Constants.QUALIFIER_TYPE_TEXT_ITALIC);
+        currentContent.removeQualifier(pos);
 
         setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_inactive);
     }
 
     private void setBoldItalicToInactive(){
-        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
-        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
-        story.getContent(currentContent).removeQualifier(pos);
+        int pos = formatter.getActiveFormatIndex(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
+        formatter.removeActiveFormat(Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC);
+        currentContent.removeQualifier(pos);
 
         setIconOnToolbarBottom(R.id.action_italic, R.drawable.ic_italic_inactive);
         setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
     }
 
     private void setTitleToInactive(){
-        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_TITLE);
-        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_TITLE);
-        story.getContent(currentContent).removeQualifier(pos);
+        int pos = formatter.getActiveFormatIndex(Constants.QUALIFIER_TYPE_TEXT_TITLE);
+        formatter.removeActiveFormat(Constants.QUALIFIER_TYPE_TEXT_TITLE);
+        currentContent.removeQualifier(pos);
 
         setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
     }
 
     private void setSubtitleToInactive(){
-        int pos = activeFormatPositions.get(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
-        activeFormatPositions.remove(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
-        story.getContent(currentContent).removeQualifier(pos);
+        int pos = formatter.getActiveFormatIndex(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
+        formatter.removeActiveFormat(Constants.QUALIFIER_TYPE_TEXT_SUBTITLE);
+        currentContent.removeQualifier(pos);
 
         setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
     }
 
     private void setEditTextBody(int cursorPosition){
-        activeEditText.setText(Story.parseTextContent(story.getContent(currentContent)),
+        activeEditText.setText(Story.parseTextContent(currentContent),
                 TextView.BufferType.EDITABLE);
         activeEditText.setSelection(cursorPosition);
     }
 
-    private void setFormatting(int formatType, int[] positions){
-        Content.Qualifier qualifier = story.getContent(currentContent).addNewQualifier();
-        qualifier.setType(formatType);
-        qualifier.addNewSpecification()
-                .setType("int")
-                .setName("starting_position")
-                .setValue(String.valueOf(positions[0]));
-        qualifier.addNewSpecification()
-                .setType("int")
-                .setName("ending_position")
-                .setValue(String.valueOf(positions[1]));
-    }
-
-    private boolean isFormatActive(int formatType){
-        return activeFormatPositions.containsKey(formatType);
-    }
-
     private void updateContent(){
-        story.getContent(currentContent).setValue(activeEditText.getText().toString());
+        currentContent.setValue(activeEditText.getText().toString());
     }
 
-    private void updateFormatting(int cursorPosition){
+    /*private void updateFormatting(int cursorPosition){
         if(isFormattingActive()){
             for(Integer integer: activeFormatPositions.values()){
                 story.getContent(currentContent)
@@ -378,27 +365,9 @@ public class WritingActivity extends AppCompatActivity {
 
     private boolean isFormattingActive(){
         return activeFormatPositions.size() > 0;
-    }
+    }*/
 
     private void setIconOnToolbarBottom(int item, int icon){
         menuItemMap.get(item).setIcon(icon);
     }
-
-    private void setIconsToInactive(){
-        setIconOnToolbarBottom(R.id.action_bold, R.drawable.ic_bold_inactive);
-        setIconOnToolbarBottom(R.id.action_format_size, R.drawable.ic_title_inactive);
-        setIconOnToolbarBottom(R.id.action_italic,R.drawable.ic_italic_inactive);
-    }
-
-    private void getActiveFormats(int currentCursorPosition){
-        activeFormatPositions.clear();
-        for(int i = 0; i < story.getContent(currentContent).getQualifiers().size(); i++){
-            Content.Qualifier q = story.getContent(currentContent).getQualifier(i);
-            if(Integer.valueOf(q.getSpecification(0).getValue())<= currentCursorPosition &&
-                    currentCursorPosition <= Integer.valueOf(q.getSpecification(1).getValue())){
-                activeFormatPositions.put(q.getType(), i);
-            }
-        }
-    }
-
 }
