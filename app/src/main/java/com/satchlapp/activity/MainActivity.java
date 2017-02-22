@@ -32,6 +32,7 @@ import java.util.List;
 
 import com.satchlapp.R;
 import com.satchlapp.adapters.StoryAdapter;
+import com.satchlapp.lists.ListLinks;
 import com.satchlapp.model.Story;
 
 public class MainActivity extends AppCompatActivity
@@ -65,16 +66,15 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
-        String url = "http://104.236.163.131:9000/api/story/n/100";
         final StoryAdapter storyAdapter = new StoryAdapter(new ArrayList<Story>(), this);
 
         // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, ListLinks.API_GET_STORIES,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         System.out.println("It worked!");
+                        System.out.println(response);
                         Gson gson = new Gson();
                         stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
                         storyAdapter.setStories(stories);

@@ -211,6 +211,8 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_publish){
+            updateContent();
+
             Content firstTextContent = null;
             boolean textContentFound = false;
             int counter = 0;
@@ -249,6 +251,7 @@ public class WritingActivity extends AppCompatActivity {
             story.setTitle(title);
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
+            System.out.println(postBody);
             JSONObject jsonObject;
             try {
                 jsonObject = new JSONObject(postBody);
