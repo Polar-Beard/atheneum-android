@@ -1,6 +1,7 @@
 package com.satchlapp.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -14,41 +15,43 @@ import android.view.MenuItem;
 
 import android.widget.TextView;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
 import com.satchlapp.R;
 import com.satchlapp.adapters.WysiwygEditorAdapter;
 import com.satchlapp.lists.Constants;
+import com.satchlapp.lists.ListLinks;
 import com.satchlapp.model.Content;
 import com.satchlapp.model.Story;
+import com.satchlapp.requests.AuthJsonObjectRequest;
 import com.satchlapp.util.TextContentFormatter;
 import com.satchlapp.view.EditTextCursorWatcher;
+
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class WritingActivity extends AppCompatActivity {
 
-    private final static int TITLE_CHAR_LIMIT = 75;
-    private final static int DESCRIPTION_CHAR_LIMIT = 150;
     private final static int PICK_IMAGE_REQUEST = 100;
-    private static final String URL_PUBLISH = "http://104.236.163.131:9000/api/story/publish";
-    private static final String PREFS_NAME = "CredentialPrefsFile";
-
 
     private static Toolbar toolbarBottom;
     private RecyclerView recyclerView;
     private EditTextCursorWatcher activeEditText;
     private WysiwygEditorAdapter adapter;
-    private int currentCursorPosition;
     private LinearLayoutManager layoutManager;
 
     private Story story;
     private Content currentContent;
 
-    private int activeEditTextPosition;
-
     private TextContentFormatter formatter;
-
     private Map<Integer, MenuItem> menuItemMap;
+
+    private int currentCursorPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -194,7 +197,7 @@ public class WritingActivity extends AppCompatActivity {
         return true;
     }
 
-    /*@Override
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -207,27 +210,43 @@ public class WritingActivity extends AppCompatActivity {
             return true;
         }
 
-        if (id == R.id.action_publish) {
-            Story story = new Story();
-            String text = bodyTextInput.getText().toString();
-            //Get first line to use as title
-            int[] titleBounds = getLineBoundaries(0,bodyTextInput);
-            String title = text.substring(0,titleBounds[1]);
-            if(title.length() >= TITLE_CHAR_LIMIT){
-                title = title.substring(0,TITLE_CHAR_LIMIT);
-            }
-            //Get second line to use as description
-            if(titleBounds[1] < text.length()) {
-                int[] descriptionBounds = getLineBoundaries(titleBounds[1] + 1, bodyTextInput);
-                String description = text.substring(titleBounds[1] + 1, descriptionBounds[1]);
-                if (description.length() >= DESCRIPTION_CHAR_LIMIT) {
-                    description = description.substring(0, DESCRIPTION_CHAR_LIMIT);
+        if (id == R.id.action_publish){
+            Content firstTextContent = null;
+            boolean textContentFound = false;
+            int counter = 0;
+            while(!textContentFound && counter < story.getContents().size()){
+                Content c = story.getContent(counter);
+                if(c.getType() == Constants.CONTENT_TYPE_TEXT){
+                    firstTextContent = c;
+                    textContentFound = true;
                 }
-                story.setDescription(description);
+                counter++;
             }
-            String body = bodyTextInput.getText();
+
+            String title = null;
+
+            if(firstTextContent != null){
+                //Get first line to use as title
+                int[] titleBounds = formatter.getLinePositions(0,firstTextContent);
+                title = firstTextContent.getValue().substring(0, titleBounds[1]);
+                if(title.length() >= Constants.TITLE_CHAR_LIMIT){
+                    title = title.substring(0,Constants.TITLE_CHAR_LIMIT);
+                }
+                //Get second line to use as description
+                if(titleBounds[1] < firstTextContent.getValue().length()) {
+                    int[] descriptionBounds = formatter.getLinePositions(titleBounds[1] + 1, firstTextContent);
+                    String description = firstTextContent.getValue().substring(titleBounds[1] + 1, descriptionBounds[1]);
+                    if (description.length() >= Constants.DESCRIPTION_CHAR_LIMIT) {
+                        description = description.substring(0, Constants.DESCRIPTION_CHAR_LIMIT);
+                    }
+                    story.setDescription(description);
+                }
+            }
+
+            if(title == null || title == ""){
+                title = "Untitled";
+            }
             story.setTitle(title);
-            story.setBody(body);
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
             JSONObject jsonObject;
@@ -236,7 +255,7 @@ public class WritingActivity extends AppCompatActivity {
             } catch (Exception e){
                 return true;
             }
-            AuthJsonObjectRequest jsonObjectRequest = new AuthJsonObjectRequest(URL_PUBLISH,jsonObject,
+            AuthJsonObjectRequest jsonObjectRequest = new AuthJsonObjectRequest(ListLinks.API_STORY_PUBLISH,jsonObject,
                     new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
@@ -249,7 +268,7 @@ public class WritingActivity extends AppCompatActivity {
                 }
             }
             );
-            SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
+            SharedPreferences credentials = getSharedPreferences(Constants.PREFS_NAME, 0);
             String emailAddress = credentials.getString("emailAddress", null);
             String password = credentials.getString("password", null);
             if(emailAddress == null|| password == null){
@@ -264,7 +283,7 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }*/
+    }
 
     private void setBoldToActive(){
         int[] positions = formatter.getWordPositions(currentCursorPosition, currentContent);
@@ -346,7 +365,7 @@ public class WritingActivity extends AppCompatActivity {
         activeEditText.setSelection(cursorPosition);
     }
 
-    private void updateContent(){
+    private void updateContent() {
         currentContent.setValue(activeEditText.getText().toString());
     }
 

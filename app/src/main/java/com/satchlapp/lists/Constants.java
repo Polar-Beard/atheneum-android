@@ -4,6 +4,10 @@ package com.satchlapp.lists;
  * Created by Sara on 2/14/2017.
  */
 public class Constants {
+    public static final String PREFS_NAME = "CredentialPrefsFile";
+    public final static int TITLE_CHAR_LIMIT = 75;
+    public final static int DESCRIPTION_CHAR_LIMIT = 150;
+
     public static final int CONTENT_TYPE_TEXT = 1;
     public static final int CONTENT_TYPE_IMAGE_WITH_CAPTION = 2;
 

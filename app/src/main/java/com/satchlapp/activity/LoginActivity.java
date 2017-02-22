@@ -29,6 +29,8 @@ import com.android.volley.toolbox.Volley;
 
 import com.google.gson.Gson;
 import com.satchlapp.R;
+import com.satchlapp.lists.Constants;
+import com.satchlapp.lists.ListLinks;
 import com.satchlapp.model.User;
 import com.satchlapp.requests.AuthStringRequest;
 import com.satchlapp.util.TextStyler;
@@ -45,10 +47,6 @@ import java.util.ArrayList;
  * Created by Sara on 10/10/2016.
  */
 public class LoginActivity extends AppCompatActivity {
-
-    private static final String URL_LOGIN = "http://104.236.163.131:9000/api/user/login";
-    private static final String URL_REGISTER_USER = "http://104.236.163.131:9000/api/user/register";
-    private static final String PREFS_NAME = "CredentialPrefsFile";
 
     private Typeface fontBold;
     private Typeface fontLight;
@@ -138,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
                 final String emailAddress = viewLoginEditTextEmail.getEditableText().toString();
                 final String password = viewLoginEditTextPassword.getEditableText().toString();
 
-                AuthStringRequest stringRequest = new AuthStringRequest(URL_LOGIN,
+                AuthStringRequest stringRequest = new AuthStringRequest(ListLinks.API_USER_LOGIN,
                         new Response.Listener<String>(){
                             @Override
                             public void onResponse(String response){
@@ -185,7 +183,7 @@ public class LoginActivity extends AppCompatActivity {
                     return;
                 }
 
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(URL_REGISTER_USER, jsonObject,
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(ListLinks.API_USER_REGISTER, jsonObject,
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
@@ -241,7 +239,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void saveCredentials(String emailAddress, String password) {
-        SharedPreferences credentials = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences credentials = getSharedPreferences(Constants.PREFS_NAME, 0);
         SharedPreferences.Editor editor = credentials.edit();
         editor.putString("emailAddress", emailAddress);
         editor.putString("password", password);
