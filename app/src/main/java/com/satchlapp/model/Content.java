@@ -86,14 +86,6 @@ public class Content {
             return specifications.get(index);
         }
 
-        public void updateFormatBoundaries(){
-            if(specifications.size() < 2){
-                return;
-            }
-
-
-
-        }
     }
 
     public class Specification {
