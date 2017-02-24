@@ -106,47 +106,58 @@ public class Story implements Serializable{
                 break;
             }
 
-            int startPos = Integer.parseInt(q.getSpecifications().get(0).getValue());
-            int endPos = Integer.parseInt(q.getSpecifications().get(1).getValue());
+            int pos0 = Integer.parseInt(q.getSpecifications().get(0).getValue());
+            int pos1 = Integer.parseInt(q.getSpecifications().get(1).getValue());
+
+            int start;
+            int end;
+
+            if(pos0 <= pos1){
+                start = pos0;
+                end = pos1;
+            } else{
+                start = pos1;
+                end = pos0;
+            }
 
             switch(q.getType()){
                 case Constants.QUALIFIER_TYPE_TEXT_BOLD:
                     parsedContent.setSpan(
                             new StyleSpan(Typeface.BOLD),
-                            startPos,
-                            endPos,
+                            start,
+                            end,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                             );
                     break;
                 case Constants.QUALIFIER_TYPE_TEXT_ITALIC:
                     parsedContent.setSpan(
                             new StyleSpan(Typeface.ITALIC),
-                            startPos,
-                            endPos,
+                            start,
+                            end,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
                     break;
                 case Constants.QUALIFIER_TYPE_TEXT_BOLD_ITALIC:
                     parsedContent.setSpan(
                             new StyleSpan(Typeface.BOLD_ITALIC),
-                            startPos,
-                            endPos,
+                            start,
+                            end,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
                     break;
                 case Constants.QUALIFIER_TYPE_TEXT_TITLE:
                     parsedContent.setSpan(
                             new RelativeSizeSpan(Constants.TITLE_FLOAT_PROPORTION),
-                            startPos,
-                            endPos,
+                            start,
+                            end,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
                     break;
                 case Constants.QUALIFIER_TYPE_TEXT_SUBTITLE:
                     parsedContent.setSpan(
                             new RelativeSizeSpan(Constants.SUBTITLE_FLOAT_PROPORTION),
-                            startPos,
-                            endPos,
+                            start,
+                            end,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
                     break;

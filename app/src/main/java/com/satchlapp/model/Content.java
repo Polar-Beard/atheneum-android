@@ -1,12 +1,13 @@
 package com.satchlapp.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by Sara on 2/8/2017.
  */
-public class Content {
+public class Content implements Serializable {
 
     private int type;
     private String value;
@@ -51,7 +52,7 @@ public class Content {
         return qualifiers.get(index);
     }
 
-    public class Qualifier{
+    public class Qualifier implements Serializable{
 
         private int type;
         private ArrayList<Specification> specifications;
@@ -88,7 +89,7 @@ public class Content {
 
     }
 
-    public class Specification {
+    public class Specification implements Serializable{
 
         private String name;
         private String type;
