@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity
                         System.out.println("It worked!");
                         System.out.println(response);
                         Gson gson = new Gson();
+                        //Story story = gson.fromJson(response,Story.class);
+                        //stories.add(story);
                         stories = gson.fromJson(response, new TypeToken<List<Story>>(){}.getType());
                         storyAdapter.setStories(stories);
                         storyAdapter.notifyDataSetChanged();

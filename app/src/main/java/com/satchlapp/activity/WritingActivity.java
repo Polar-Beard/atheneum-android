@@ -9,29 +9,38 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.cloudinary.Cloudinary;
 import com.google.gson.Gson;
 import com.satchlapp.R;
 import com.satchlapp.adapters.WysiwygEditorAdapter;
 import com.satchlapp.lists.Constants;
 import com.satchlapp.lists.ListLinks;
+import com.satchlapp.lists.SecretKeys;
 import com.satchlapp.model.Content;
 import com.satchlapp.model.Story;
 import com.satchlapp.requests.AuthJsonObjectRequest;
+import com.satchlapp.util.CloudinaryAsyncTask;
 import com.satchlapp.util.TextContentFormatter;
+import com.satchlapp.util.Tools;
 import com.satchlapp.view.EditTextCursorWatcher;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
+
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,7 +97,7 @@ public class WritingActivity extends AppCompatActivity {
                     activeEditText = (EditTextCursorWatcher) focusedChild;
                     currentContent = story.getContent(layoutManager.getPosition(focusedChild));
                     currentCursorPosition = activeEditText.getSelectionStart();
-                    updateContent();
+                    updateContent(currentContent,activeEditText);
                     formatter.findActiveFormattingPositions(currentContent, currentCursorPosition);
 
                     switch (item.getItemId()) {
@@ -211,18 +220,22 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         if (id == R.id.action_publish){
-            updateContent();
 
             Content firstTextContent = null;
-            boolean textContentFound = false;
-            int counter = 0;
-            while(!textContentFound && counter < story.getContents().size()){
-                Content c = story.getContent(counter);
-                if(c.getType() == Constants.CONTENT_TYPE_TEXT){
-                    firstTextContent = c;
-                    textContentFound = true;
+
+            //Updating all the contents with their associated Edit Texts. Make sure everything
+            //is current!
+            for(int i = 0; i < adapter.getItemCount(); i++){
+                if(adapter.getItemViewType(i) == Constants.CONTENT_TYPE_TEXT){
+                    EditText view = (EditText) layoutManager.findViewByPosition(i);
+                    Content content = story.getContent(i);
+                    updateContent(content, view);
+
+                    //Get the first text content while I'm processing the edit texts. Save a loop!
+                    if(firstTextContent == null){
+                        firstTextContent = content;
+                    }
                 }
-                counter++;
             }
 
             String title = null;
@@ -245,10 +258,32 @@ public class WritingActivity extends AppCompatActivity {
                 }
             }
 
-            if(title == null || title == ""){
+            if(title == null || title.equals("")){
                 title = "Untitled";
             }
             story.setTitle(title);
+
+            Map config = new HashMap();
+            config.put("cloud_name", SecretKeys.CLOUDINARY_CLOUD_NAME);
+            config.put("api_key", SecretKeys.CLOUDINARY_API_KEY);
+            config.put("api_secret", SecretKeys.CLOUDINARY_API_SECRET);
+            Cloudinary cloudinary = new Cloudinary(config);
+
+            Map<String,InputStream> imagesToUpload = new HashMap<>();
+            for(Content content: story.getContents()){
+                if(content.getType() == Constants.CONTENT_TYPE_IMAGE_WITH_CAPTION){
+                    String imageId = Tools.randomString(20);
+                    try{
+                        imagesToUpload.put(imageId,getAssetStream(Uri.parse(content.getValue())));
+                        content.setValue(cloudinary.url().generate(imageId));
+                    }catch (IOException e){
+                        Log.e("WritingActivity",e.toString());
+                    }
+                }
+            }
+
+            new CloudinaryAsyncTask().execute(imagesToUpload);
+
             Gson gson = new Gson();
             String postBody = gson.toJson(story);
             System.out.println(postBody);
@@ -286,6 +321,10 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private InputStream getAssetStream(Uri uri) throws IOException {
+        return getContentResolver().openInputStream(uri);
     }
 
     private void setBoldToActive(){
@@ -368,8 +407,8 @@ public class WritingActivity extends AppCompatActivity {
         activeEditText.setSelection(cursorPosition);
     }
 
-    private void updateContent() {
-        currentContent.setValue(activeEditText.getText().toString());
+    private void updateContent(Content content, EditText editText){
+        content.setValue(editText.getText().toString());
     }
 
     /*private void updateFormatting(int cursorPosition){
