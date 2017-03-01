@@ -1,6 +1,7 @@
 package com.satchlapp.adapters;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -85,6 +86,9 @@ public class ReadableViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public TextViewHolder(View itemView) {
             super(itemView);
             text = (TextView) itemView.findViewById(R.id.listItemTextView);
+            text.setTypeface(
+                    Typeface.createFromAsset(context.getAssets(), "fonts/Merriweather-Regular.ttf")
+            );
         }
     }
 
