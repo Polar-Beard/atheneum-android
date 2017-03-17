@@ -13,8 +13,15 @@ public class User {
     private String password;
     private String firstName;
     private String lastName;
+    private String profilePictureUrl;
 
     public User(){
+        this(null,null);
+    }
+
+    public User(String emailAddress, String password){
+        this.emailAddress = emailAddress;
+        this.password = password;
     }
 
     public void setEmailAddress(String emailAddress){
@@ -55,6 +62,14 @@ public class User {
 
     public String getLastName(){
         return lastName;
+    }
+
+    public String getProfilePictureUrl(){
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl){
+        this.profilePictureUrl = profilePictureUrl;
     }
 
 }

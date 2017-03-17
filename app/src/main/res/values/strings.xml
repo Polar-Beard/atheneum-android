@@ -9,4 +9,5 @@
     <string name="action_publish">Publish</string>
     <string name="title_activity_writing">WritingActivity</string>
     <string name="title_activity_reading">ReadingActivity</string>
+    <string name="button_continue_activity_story_preview">Continue</string>
 </resources>

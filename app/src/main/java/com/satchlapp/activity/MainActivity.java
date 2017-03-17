@@ -1,6 +1,8 @@
 package com.satchlapp.activity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,8 +17,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-
-
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -31,15 +31,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.satchlapp.R;
-import com.satchlapp.adapters.StoryAdapter;
-import com.satchlapp.lists.ListLinks;
+import com.satchlapp.adapter.StoryAdapter;
+import com.satchlapp.listener.OnNavigationItemSelectedListener;
+import com.satchlapp.list.ListLinks;
 import com.satchlapp.model.Story;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+        implements View.OnClickListener {
+
+    private final static int PICK_PDF_REQUEST = 200;
 
     private RecyclerView recyclerView;
     private List<Story> stories;
+
+    private final Context context = this;
+    private final String twoHyphens = "--";
+    private final String lineEnd = "\r\n";
+    private final String boundary = "apiclient-" + System.currentTimeMillis();
+    private final String mimeType = "multipart/form-data;boundary=" + boundary;
+    private byte[] multipartBody;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -64,7 +74,7 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setNavigationItemSelectedListener(new OnNavigationItemSelectedListener(this,drawer));
 
         final StoryAdapter storyAdapter = new StoryAdapter(new ArrayList<Story>(), this);
 
@@ -129,30 +139,26 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        if (id == R.id.nav_new_story) {
-            Intent intent = new Intent(getApplicationContext(), WritingActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_gallery) {
+        if (requestCode == PICK_PDF_REQUEST
+                && resultCode == RESULT_OK
+                && data != null
+                && data.getData() != null) {
+            Uri uri = data.getData();
 
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+            /*try {
+                InputStream inputStream = getContentResolver().openInputStream(uri);
+                Map<String, InputStream> map = new HashMap<>();
+                map.put(Tools.randomString(10),inputStream);
+                CloudinaryAsyncTask fileUploader = new CloudinaryAsyncTask();
+                fileUploader.execute(map);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }*/
         }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 
     @Override

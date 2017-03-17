@@ -1,6 +1,6 @@
 package com.satchlapp.util;
 
-import com.satchlapp.lists.Constants;
+import com.satchlapp.list.Constants;
 import com.satchlapp.model.Content;
 
 import java.util.HashMap;
@@ -42,7 +42,7 @@ public class TextContentFormatter {
      * Returns the index of the corresponding format type from the activeFormats map.
      * @param formatType an int that corresponds to a format type.
      * @return the index of the format type
-     * @see com.satchlapp.lists.Constants
+     * @see com.satchlapp.list.Constants
      */
     public int getActiveFormatIndex(int formatType){
         return activeFormats.get(formatType);
@@ -51,7 +51,7 @@ public class TextContentFormatter {
     /**
      * Removes the specified format type from the map of active formats
      * @param formatType an int that corresponds to a format type.
-     * @see com.satchlapp.lists.Constants
+     * @see com.satchlapp.list.Constants
      */
     public void removeActiveFormat(int formatType){
         activeFormats.remove(formatType);
@@ -61,7 +61,7 @@ public class TextContentFormatter {
      * Returns true if the active formats map contains the specified format type.
      * @param formatType an int that corresponds to a format type.
      * @return true if map contains specified format type.
-     * @see com.satchlapp.lists.Constants
+     * @see com.satchlapp.list.Constants
      */
     public boolean isFormatActive(int formatType){
         return activeFormats.containsKey(formatType);

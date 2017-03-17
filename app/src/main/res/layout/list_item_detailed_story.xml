@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:android.support.v7.cardview="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/listItemDetailedStoryCardView"
+    android:layout_width="@dimen/card_view_large_width"
+    android:layout_height="@dimen/card_view_large_height"
+    android:layout_marginTop="@dimen/card_view_large_margin_vertical"
+    android:layout_marginBottom="@dimen/card_view_large_margin_vertical"
+    android:layout_marginRight="@dimen/card_view_large_margin_middle"
+    android:layout_marginLeft="@dimen/card_view_large_margin_end"
+    android.support.v7.cardview:cardCornerRadius="@dimen/card_view_corner_radius"
+    android.support.v7.cardview:cardElevation="@dimen/card_view_elevation">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="10">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:layout_margin="@dimen/card_view_content_padding"
+            android:layout_weight="1">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:id="@+id/listItemDetailedStoryImageViewAuthorProfile" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Author's Name"
+                style="@style/TextAppearance.AppCompat.Caption"
+                android:id="@+id/listItemDetailedStoryTextViewAuthor" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="6">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/listItemDetailedStoryImageViewCoverImage" />
+            <TextView
+                style="@style/TextAppearance.AppCompat.Headline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/card_view_content_padding"
+                android:gravity="center_vertical|start"
+                android:padding="@dimen/text_view_headline_padding"
+                android:text="New Text"
+                android:id="@+id/listItemDetailedStoryTextViewTitle" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/TextAppearance.AppCompat.Body1"
+            android:text="New Text"
+            android:layout_margin="@dimen/card_view_content_padding"
+            android:id="@+id/listItemDetailedStoryTextViewDescriptionShort"
+            android:layout_weight="2" />
+        <ImageButton
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:src="@drawable/ic_keyboard_arrow_down_black_24px"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/listItemDetailedStoryButtonExpandDescription"
+            android:layout_weight="1"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/listItemDetailedStoryTextViewDescriptionFull" />
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

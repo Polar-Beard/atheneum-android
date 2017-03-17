@@ -1,4 +1,4 @@
-package com.satchlapp.adapters;
+package com.satchlapp.adapter;
 
 import android.content.Context;
 import android.graphics.Typeface;
@@ -18,7 +18,7 @@ import com.satchlapp.view.OnSelectionChangedListener;
 import com.squareup.picasso.Picasso;
 
 import com.satchlapp.R;
-import com.satchlapp.lists.Constants;
+import com.satchlapp.list.Constants;
 import com.satchlapp.model.Content;
 
 import java.util.List;
@@ -113,6 +113,8 @@ public class WysiwygEditorAdapter
         else if(viewHolder instanceof ImageViewWithCaptionViewHolder) {
             Picasso.with(context)
                     .load(content.getValue())
+                    .fit()
+                    .centerCrop()
                     .into(((ImageViewWithCaptionViewHolder) viewHolder).imageView);
         }
 

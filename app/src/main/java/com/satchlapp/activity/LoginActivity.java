@@ -25,14 +25,16 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import com.google.gson.Gson;
 import com.satchlapp.R;
-import com.satchlapp.lists.Constants;
-import com.satchlapp.lists.ListLinks;
+import com.satchlapp.list.Constants;
+import com.satchlapp.list.ListLinks;
 import com.satchlapp.model.User;
-import com.satchlapp.requests.AuthStringRequest;
+import com.satchlapp.request.AuthStringRequest;
+import com.satchlapp.util.MailgunVerifyEmailResponse;
 import com.satchlapp.util.TextStyler;
 import com.satchlapp.view.CustomViewPager;
 import com.satchlapp.view.CustomViewPagerView;
@@ -64,10 +66,16 @@ public class LoginActivity extends AppCompatActivity {
     private CustomViewPager viewPager;
     private LoginPagerAdapter pagerAdapter;
 
+    private Gson gson;
+    private RequestQueue queue;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        gson = new Gson();
+        queue = Volley.newRequestQueue(this);
 
         fontBold = Typeface.createFromAsset(getAssets(), "fonts/Merriweather-Bold.ttf");
         fontLight = Typeface.createFromAsset(getAssets(), "fonts/Merriweather-Light.ttf");
@@ -120,8 +128,6 @@ public class LoginActivity extends AppCompatActivity {
 
         pagerAdapter.addView(viewMain);
 
-        final RequestQueue queue = Volley.newRequestQueue(this);
-
         viewRegisterEditTextEmail = (EditText) viewRegister.findViewById(R.id.viewRegisterEditTextEmail);
         viewRegisterEditTextPassword = (EditText) viewRegister.findViewById(R.id.viewRegisterEditTextPassword);
         viewRegisterButton = (Button) viewRegister.findViewById(R.id.viewRegisterButton);
@@ -171,71 +177,106 @@ public class LoginActivity extends AppCompatActivity {
         viewRegisterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Gson gson = new Gson();
-                User user = new User();
-                user.setEmailAddress(viewRegisterEditTextEmail.getEditableText().toString());
-                user.setPassword(viewRegisterEditTextPassword.getEditableText().toString());
-                String postBody = gson.toJson(user);
-                JSONObject jsonObject;
-                try {
-                    jsonObject = new JSONObject(postBody);
-                } catch(Exception e){
-                    return;
-                }
-
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(ListLinks.API_USER_REGISTER, jsonObject,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                Context context = getApplicationContext();
-                                CharSequence text = "You're registered!";
-                                int duration = Toast.LENGTH_SHORT;
-                                Toast toast = Toast.makeText(context, text, duration);
-                                toast.show();
-
-                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                startActivity(intent);
-                            }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                NetworkResponse networkResponse = error.networkResponse;
-                                if(networkResponse==null){
-                                    System.out.println("Network Response is null");
-                                } else{
-                                    System.out.println(networkResponse.statusCode);
-                                }
-                                Context context = getApplicationContext();
-                                CharSequence text = "Failed to create new account";
-                                int duration = Toast.LENGTH_SHORT;
-                                Toast toast = Toast.makeText(context, text, duration);
-                                toast.show();
-                            }
-                        }
-                ){
-                    @Override
-                    protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                        try {
-                            String jsonString = new String(response.data,
-                                    HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
-                            return Response.success(new JSONObject(jsonString),
-                                    HttpHeaderParser.parseCacheHeaders(response));
-                        } catch (UnsupportedEncodingException e) {
-                            return Response.error(new ParseError(e));
-                        } catch (JSONException je) {
-                            Log.v("Volley", "JSONException " + response.statusCode);
-                            if (response.statusCode == 200)// Added for 200 response
-                                return Response.success(new JSONObject(),HttpHeaderParser.parseCacheHeaders(response));
-                            return Response.error(new ParseError(je));
-                        }
-                    }
-
-                };
-                queue.add(jsonObjectRequest);
+                User user = new User(viewRegisterEditTextEmail.getEditableText().toString(),
+                        viewRegisterEditTextPassword.getEditableText().toString());
+                validateEmail(user);
             }
         });
 
+    }
+
+    private void validateEmail(User user){
+        final User finalUser = user;
+        String url = ListLinks.API_MAILGUN_VERIFY_EMAIL + "&address=" + user.getEmailAddress();
+        StringRequest stringRequest = new StringRequest(url,
+                new Response.Listener<String>(){
+                    @Override
+                    public void onResponse(String response){
+                        gson = new Gson();
+                        MailgunVerifyEmailResponse verifyEmail =
+                                gson.fromJson(response,MailgunVerifyEmailResponse.class);
+                        if(!verifyEmail.isEmailValid()){
+                            showInvalidEmailToast();
+                        }else{
+                            submitUser(finalUser);
+                        }
+                    }
+                },
+                new Response.ErrorListener(){
+                    @Override
+                    public void onErrorResponse(VolleyError error){
+                        System.out.println("That's an error");
+                    }
+                }
+
+
+        );
+        queue.add(stringRequest);
+    }
+
+    private void submitUser(User user){
+        String postBody = gson.toJson(user);
+        JSONObject jsonObject;
+        try {
+            jsonObject = new JSONObject(postBody);
+        } catch(Exception e){
+            return;
+        }
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(ListLinks.API_USER_REGISTER, jsonObject,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Context context = getApplicationContext();
+                        CharSequence text = "You're registered!";
+                        int duration = Toast.LENGTH_SHORT;
+                        Toast toast = Toast.makeText(context, text, duration);
+                        toast.show();
+
+                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                        startActivity(intent);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        NetworkResponse networkResponse = error.networkResponse;
+                        if(networkResponse==null){
+                            System.out.println("Network Response is null");
+                        } else{
+                            System.out.println(networkResponse.statusCode);
+                        }
+                        Context context = getApplicationContext();
+                        CharSequence text = "Failed to create new account";
+                        int duration = Toast.LENGTH_SHORT;
+                        Toast toast = Toast.makeText(context, text, duration);
+                        toast.show();
+                    }
+                }
+        ){
+            @Override
+            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                try {
+                    String jsonString = new String(response.data,
+                            HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
+                    return Response.success(new JSONObject(jsonString),
+                            HttpHeaderParser.parseCacheHeaders(response));
+                } catch (UnsupportedEncodingException e) {
+                    return Response.error(new ParseError(e));
+                } catch (JSONException je) {
+                    Log.v("Volley", "JSONException " + response.statusCode);
+                    if (response.statusCode == 200)// Added for 200 response
+                        return Response.success(new JSONObject(),HttpHeaderParser.parseCacheHeaders(response));
+                    return Response.error(new ParseError(je));
+                }
+            }
+
+        };
+        queue.add(jsonObjectRequest);
+
+    }
+
+    private void showInvalidEmailToast(){
+        Toast.makeText(getApplicationContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
     }
 
     private void saveCredentials(String emailAddress, String password) {

@@ -1,4 +1,4 @@
-package com.satchlapp.lists;
+package com.satchlapp.list;
 
 /**
  * Created by Sara on 2/14/2017.

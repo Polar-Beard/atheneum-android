@@ -6,7 +6,7 @@ import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 
-import com.satchlapp.lists.Constants;
+import com.satchlapp.list.Constants;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -21,8 +21,9 @@ public class Story implements Serializable{
     private UUID storyId;
     private String title;
     private String description;
-    private UUID authorId;
     private List<Content> contents;
+    private String coverImageUrl;
+    private User author;
 
     public Story(){
         this(null,null);
@@ -45,10 +46,6 @@ public class Story implements Serializable{
         return description;
     }
 
-    public UUID getAuthorId(){
-        return authorId;
-    }
-
     public void setTitle(String title){
         this.title = title;
     }
@@ -59,10 +56,6 @@ public class Story implements Serializable{
 
     public void setDescription(String description){
         this.description = description;
-    }
-
-    public void setAuthorId(UUID authorId){
-        this.authorId = authorId;
     }
 
     public void addContent(Content content){
@@ -167,5 +160,20 @@ public class Story implements Serializable{
         return parsedContent;
     }
 
+    public void setCoverImageUrl(String url){
+        this.coverImageUrl = url;
+    }
+
+    public String getCoverImageUrl(){
+        return coverImageUrl;
+    }
+
+    public void setAuthor(User author){
+        this.author = author;
+    }
+
+    public User getAuthor(){
+        return author;
+    }
 
 }

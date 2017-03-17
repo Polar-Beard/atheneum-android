@@ -14,6 +14,8 @@ public class TestActivity extends AppCompatActivity {
     private Button buttonLoginActivity;
     private Button buttonMainActivity;
     private Button buttonReadingActivity;
+    private Button buttonHomeActivity;
+    private Button buttonStoryPreviewActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +26,8 @@ public class TestActivity extends AppCompatActivity {
         buttonMainActivity = (Button) findViewById(R.id.testActivityButtonMainActivity);
         buttonWritingActivity = (Button) findViewById(R.id.testActivityButtonWritingActivity);
         buttonReadingActivity = (Button) findViewById(R.id.testActivityButtonReadingActivity);
+        buttonHomeActivity = (Button) findViewById(R.id.testActivityButtonHomeActivity);
+        buttonStoryPreviewActivity = (Button) findViewById(R.id.testActivityButtonStoryPreviewActivity);
 
         buttonLoginActivity.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,6 +54,20 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(),ReadingActivity.class);
+                startActivity(intent);
+            }
+        });
+        buttonHomeActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(),HomeActivity.class);
+                startActivity(intent);
+            }
+        });
+        buttonStoryPreviewActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(),StoryPreviewActivity.class);
                 startActivity(intent);
             }
         });

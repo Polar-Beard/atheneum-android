@@ -1,12 +1,11 @@
 package com.satchlapp.util;
 
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.satchlapp.lists.SecretKeys;
+import com.satchlapp.list.SecretKeys;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,11 +31,11 @@ public class CloudinaryAsyncTask extends AsyncTask<Map,Void,Void> {
 
     @Override
     protected Void doInBackground(Map... maps){
-        Map<String,InputStream> images = maps[0];
-        for(String imageId: images.keySet()){
+        Map<String,InputStream> map = maps[0];
+        for(String id: map.keySet()){
             try {
-                Map uploadResult = cloudinary.uploader().upload(images.get(imageId)
-                        ,ObjectUtils.asMap("public_id", imageId));
+                Map uploadResult = cloudinary.uploader().upload(map.get(id)
+                        , ObjectUtils.asMap("public_id", id));
                 System.out.println(uploadResult.toString());
             } catch(IOException e){
                 Log.e("CloudinaryAsyncTask", e.toString());

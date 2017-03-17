@@ -11,7 +11,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.satchlapp.R;
-import com.satchlapp.adapters.ReadableViewAdapter;
+import com.satchlapp.adapter.ReadableViewAdapter;
 import com.satchlapp.model.Story;
 
 public class ReadingActivity extends AppCompatActivity {

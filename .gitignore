@@ -6,4 +6,4 @@
 .DS_Store
 /build
 /captures
-/app/src/main/java/com/satchlapp/lists/SecretKeys.java
+/app/src/main/java/com/satchlapp/list/SecretKeys.java

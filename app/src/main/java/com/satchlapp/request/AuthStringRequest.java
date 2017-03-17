@@ -1,4 +1,4 @@
-package com.satchlapp.requests;
+package com.satchlapp.request;
 
 import android.util.Base64;
 
