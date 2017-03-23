@@ -11,13 +11,18 @@
     <dimen name="card_view_large_margin_vertical">15dp</dimen>
     <dimen name="card_view_large_margin_middle">25dp</dimen>
     <dimen name="card_view_large_margin_end">5dp</dimen>
+    <dimen name="card_view_small_margin_middle">12dp</dimen>
     <dimen name="card_view_corner_radius">5dp</dimen>
     <dimen name="card_view_elevation">5dp</dimen>
+    <dimen name="card_view_heading_padding">5dp</dimen>
     <dimen name="card_view_content_padding">10dp</dimen>
     <dimen name="text_view_headline_padding">5dp</dimen>
     <dimen name="story_preview_card_view_width">375dp</dimen>
     <dimen name="story_preview_card_view_height">550dp</dimen>
     <dimen name="story_preview_card_view_elevation">10dp</dimen>
+    <dimen name="card_view_small_width">165dp</dimen>
+    <dimen name="card_view_small_height">200dp</dimen>
     <dimen name="button_width">25dp</dimen>
     <dimen name="button_height">15dp</dimen>
+    <dimen name="button_story_tag_height">20dp</dimen>
 </resources>

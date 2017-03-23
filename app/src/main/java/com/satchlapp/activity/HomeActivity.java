@@ -51,7 +51,7 @@ public class HomeActivity extends AppCompatActivity {
         List<Story> storyList = new ArrayList<>();
         for(int i = 1; i < 6; i++){
             Story story = new Story();
-            story.setTitle("Story: " + i);
+            story.setTitle("This Is A Story With Kinda A Long Title: " + i);
             story.setDescription(loremIpsum);
             story.setCoverImageUrl("https://source.unsplash.com/random");
             story.setAuthor(author);
