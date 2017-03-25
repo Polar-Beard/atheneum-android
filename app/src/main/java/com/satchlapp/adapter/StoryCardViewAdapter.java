@@ -1,5 +1,8 @@
 package com.satchlapp.adapter;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -15,8 +18,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.satchlapp.PaletteTransformation;
@@ -35,9 +41,11 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private Category category;
     private Context context;
+    private AnimatorSet animatorSet;
 
     public StoryCardViewAdapter(Category category){
         this.category = category;
+        initAnimations();
     }
 
     @Override
@@ -126,6 +134,27 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
             });
         } else if(viewHolder instanceof SimpleStoryViewHolder){
             final SimpleStoryViewHolder castedViewHolder = (SimpleStoryViewHolder) viewHolder;
+            castedViewHolder.container.setOnClickListener(new View.OnClickListener() {
+                private boolean cardFrontIsShowing = true;
+
+                @Override
+                public void onClick(View view) {
+                    if(cardFrontIsShowing){
+                        castedViewHolder.linearLayoutCardFront.setVisibility(View.GONE);
+                        castedViewHolder.linearLayoutCardBack.setVisibility(View.VISIBLE);
+
+                        animatorSet.setTarget(view);
+                        animatorSet.start();
+
+                        cardFrontIsShowing = false;
+                    } else{
+                        castedViewHolder.linearLayoutCardBack.setVisibility(View.GONE);
+                        castedViewHolder.linearLayoutCardFront.setVisibility(View.VISIBLE);
+
+                        cardFrontIsShowing = true;
+                    }
+                }
+            });
             Picasso.with(context)
                     .load(story.getCoverImageUrl())
                     .fit().centerCrop()
@@ -143,8 +172,7 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
                         }
                     });
             castedViewHolder.textViewTitle.setText(story.getTitle());
-
-
+            castedViewHolder.textViewDescription.setText(story.getDescription());
         }
     }
 
@@ -180,15 +208,23 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     class SimpleStoryViewHolder extends RecyclerView.ViewHolder{
+        private CardView container;
+        private LinearLayout linearLayoutCardFront;
+        private LinearLayout linearLayoutCardBack;
         private ImageView imageViewCoverImage;
         private TextView textViewTitle;
+        private TextView textViewDescription;
         private Button buttonStoryTag1;
         private Button buttonStoryTag2;
 
         public SimpleStoryViewHolder(View itemView){
             super(itemView);
+            container = (CardView) itemView.findViewById(R.id.listItemSimpleStoryCardView);
+            linearLayoutCardFront = (LinearLayout) itemView.findViewById(R.id.listItemSimpleStoryCardFront);
+            linearLayoutCardBack = (LinearLayout) itemView.findViewById(R.id.listItemSimpleStoryCardBack);
             imageViewCoverImage = (ImageView) itemView.findViewById(R.id.listItemSimpleStoryImageViewCoverImage);
             textViewTitle = (TextView) itemView.findViewById(R.id.listItemSimpleStoryTextViewTitle);
+            textViewDescription = (TextView) itemView.findViewById(R.id.listItemSimpleStoryTextViewDescription);
             buttonStoryTag1 = (Button) itemView.findViewById(R.id.listItemSimpleStoryButtonStoryTag1);
             buttonStoryTag2 = (Button) itemView.findViewById(R.id.listItemSimpleStoryButtonStoryTag2);
         }
@@ -229,6 +265,16 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
 
         return swatch;
+    }
+
+    private void initAnimations(){
+        Animator cardFlipLeftIn = AnimatorInflater.loadAnimator(context, R.animator.card_flip_left_in);
+        Animator cardFlipLeftOut = AnimatorInflater.loadAnimator(context, R.animator.card_flip_left_out);
+        Animator cardFlipRightIn = AnimatorInflater.loadAnimator(context, R.animator.card_flip_right_in);
+        Animator cardFlipRightOut = AnimatorInflater.loadAnimator(context, R.animator.card_flip_right_out);
+
+        animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(cardFlipLeftIn,cardFlipLeftOut,cardFlipRightIn,cardFlipRightOut);
     }
 
 }

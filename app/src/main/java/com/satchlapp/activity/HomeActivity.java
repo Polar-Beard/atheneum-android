@@ -1,5 +1,8 @@
 package com.satchlapp.activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -79,7 +82,15 @@ public class HomeActivity extends AppCompatActivity {
         recyclerViewCategories.setAdapter(adapter);
         recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
 
+    }
 
+    private void initAnimations(){
+        Animator cardFlipLeftIn = AnimatorInflater.loadAnimator(this, R.animator.card_flip_left_in);
+        Animator cardFlipLeftOut = AnimatorInflater.loadAnimator(this, R.animator.card_flip_left_out);
+        Animator cardFlipRightIn = AnimatorInflater.loadAnimator(this, R.animator.card_flip_right_in);
+        Animator cardFlipRightOut = AnimatorInflater.loadAnimator(this, R.animator.card_flip_right_out);
 
+        //animatorSet = new AnimatorSet();
+        //animatorSet.playSequentially(cardFlipLeftIn,cardFlipLeftOut,cardFlipRightIn,cardFlipRightOut);
     }
 }
