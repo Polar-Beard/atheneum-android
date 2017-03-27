@@ -84,13 +84,4 @@ public class HomeActivity extends AppCompatActivity {
 
     }
 
-    private void initAnimations(){
-        Animator cardFlipLeftIn = AnimatorInflater.loadAnimator(this, R.animator.card_flip_left_in);
-        Animator cardFlipLeftOut = AnimatorInflater.loadAnimator(this, R.animator.card_flip_left_out);
-        Animator cardFlipRightIn = AnimatorInflater.loadAnimator(this, R.animator.card_flip_right_in);
-        Animator cardFlipRightOut = AnimatorInflater.loadAnimator(this, R.animator.card_flip_right_out);
-
-        //animatorSet = new AnimatorSet();
-        //animatorSet.playSequentially(cardFlipLeftIn,cardFlipLeftOut,cardFlipRightIn,cardFlipRightOut);
-    }
 }

@@ -1,5 +1,6 @@
 package com.satchlapp.adapter;
 
+import android.animation.AnimatorSet;
 import android.content.Context;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;

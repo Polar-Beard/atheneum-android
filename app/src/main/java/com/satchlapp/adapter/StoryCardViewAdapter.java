@@ -31,6 +31,7 @@ import com.satchlapp.activity.StoryPreviewActivity;
 import com.satchlapp.model.Category;
 import com.satchlapp.model.Story;
 import com.satchlapp.model.User;
+import com.satchlapp.util.CustomAnimation;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -41,11 +42,9 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private Category category;
     private Context context;
-    private AnimatorSet animatorSet;
 
     public StoryCardViewAdapter(Category category){
         this.category = category;
-        initAnimations();
     }
 
     @Override
@@ -140,16 +139,13 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
                 @Override
                 public void onClick(View view) {
                     if(cardFrontIsShowing){
-                        castedViewHolder.linearLayoutCardFront.setVisibility(View.GONE);
-                        castedViewHolder.linearLayoutCardBack.setVisibility(View.VISIBLE);
-
-                        animatorSet.setTarget(view);
-                        animatorSet.start();
+                        CustomAnimation.crossFadeViews(castedViewHolder.linearLayoutCardFront,
+                                castedViewHolder.linearLayoutCardBack);
 
                         cardFrontIsShowing = false;
                     } else{
-                        castedViewHolder.linearLayoutCardBack.setVisibility(View.GONE);
-                        castedViewHolder.linearLayoutCardFront.setVisibility(View.VISIBLE);
+                        CustomAnimation.crossFadeViews(castedViewHolder.linearLayoutCardBack,
+                                castedViewHolder.linearLayoutCardFront);
 
                         cardFrontIsShowing = true;
                     }
@@ -266,15 +262,4 @@ public class StoryCardViewAdapter extends RecyclerView.Adapter<RecyclerView.View
 
         return swatch;
     }
-
-    private void initAnimations(){
-        Animator cardFlipLeftIn = AnimatorInflater.loadAnimator(context, R.animator.card_flip_left_in);
-        Animator cardFlipLeftOut = AnimatorInflater.loadAnimator(context, R.animator.card_flip_left_out);
-        Animator cardFlipRightIn = AnimatorInflater.loadAnimator(context, R.animator.card_flip_right_in);
-        Animator cardFlipRightOut = AnimatorInflater.loadAnimator(context, R.animator.card_flip_right_out);
-
-        animatorSet = new AnimatorSet();
-        animatorSet.playSequentially(cardFlipLeftIn,cardFlipLeftOut,cardFlipRightIn,cardFlipRightOut);
-    }
-
 }
