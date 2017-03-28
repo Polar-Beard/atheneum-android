@@ -3,7 +3,7 @@
     xmlns:android.support.v7.cardview="http://schemas.android.com/apk/res-auto"
     android:id="@+id/listItemDetailedStoryCardView"
     android:layout_width="@dimen/card_view_large_width"
-    android:layout_height="@dimen/card_view_large_height"
+    android:layout_height="wrap_content"
     android:layout_marginTop="@dimen/card_view_large_margin_vertical"
     android:layout_marginBottom="@dimen/card_view_large_margin_vertical"
     android:layout_marginRight="@dimen/card_view_large_margin_middle"
@@ -14,18 +14,16 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:weightSum="10">
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_margin="@dimen/card_view_content_padding"
-            android:layout_weight="1.25">
+            android:layout_margin="@dimen/card_view_content_padding">
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
                 android:layout_gravity="left|center_vertical"
                 android:scaleType="fitCenter"
                 android:id="@+id/listItemDetailedStoryImageViewAuthorProfile" />
@@ -40,11 +38,10 @@
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="8">
+            android:layout_height="wrap_content">
             <ImageView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="175dp"
                 android:src="@drawable/darkdenim3"
                 android:id="@+id/listItemDetailedStoryImageViewCoverImage" />
             <TextView
@@ -61,22 +58,76 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:maxLines="4"
+            android:ellipsize="end"
             style="@style/TextAppearance.AppCompat.Body1"
             android:text="New Text"
             android:layout_margin="@dimen/card_view_content_padding"
             android:id="@+id/listItemDetailedStoryTextViewDescriptionShort"
             android:layout_weight="1"/>
-        <Button
-            style="?android:attr/buttonStyleSmall"
-            android:text="@string/button_preview"
-            android:textColor="@color/grey"
-            android:layout_width="wrap_content"
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/listItemDetailedStoryButtonContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:drawableBottom="@drawable/ic_keyboard_arrow_down_black_24px"
-            android:background="@android:color/transparent"
-            android:scaleType="fitCenter"
-            android:layout_gravity="center_horizontal"
-            android:id="@+id/listItemDetailedStoryButtonExpandDescription" />
+            android.support.v7.cardview:cardElevation="0dp">
+            <LinearLayout
+                android:id="@+id/listItemDetailedStoryLinearLayoutButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center">
+                <TextView
+                    android:id="@+id/listItemDetailedStoryTextViewButtonLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center|bottom"
+                    android:text="Preview"
+                    style="@style/TextAppearance.AppCompat.Button"
+                    android:textColor="@color/grey"
+                    />
+                <ImageButton
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24px"
+                    android:background="@android:color/transparent"
+                    android:scaleType="fitCenter"
+                    android:layout_gravity="center_horizontal|top"
+                    android:id="@+id/listItemDetailedStoryButtonExpandDescription" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/listItemDetailedStoryLinearLayoutContinue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="right|center_vertical"
+                android:layout_marginRight="5dp"
+                android:visibility="gone"
+               >
+
+            <TextView
+                android:id="@+id/listItemDetailedStoryTextViewContinue"
+                style="@style/TextAppearance.AppCompat.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Read"
+                android:textColor="@color/colorAccent" />
+            <ImageButton
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_keyboard_arrow_down_brown"
+                android:background="@android:color/transparent"
+                android:scaleType="fitCenter"
+                android:layout_gravity="center_horizontal|top"
+                android:id="@+id/listItemDetailedStoryButtonRead" />
+            </LinearLayout>
+
+
+        </android.support.v7.widget.CardView>
+
     </LinearLayout>
 
 </android.support.v7.widget.CardView>
